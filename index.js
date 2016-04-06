@@ -2,6 +2,7 @@ var express = require('express');
 var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
+var portNumber = process.env.PORT || 3000;
 
 var util = require('./helpers/util');
 
@@ -75,6 +76,6 @@ io.on('connection', function (socket) {
     });
 });
 
-http.listen(3000, function () {
-    console.log('listening on *:3000');
+http.listen(portNumber, function () {
+    console.log('listening on *:' + portNumber);
 });
