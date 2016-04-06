@@ -15,7 +15,7 @@
 console.log('Running ETI Social');
 
 
-var socket = io('http://localhost:3000');
+var socket = io('http://eti-social.herokuapp.com');
 var users = [];
 var topicId = parseInt(location.href.match(/topic=(\d+)/)[1]);
 
