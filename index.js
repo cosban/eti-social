@@ -7,7 +7,6 @@ var portNumber = process.env.PORT || 3000;
 var util = require('./helpers/util');
 
 
-app.use(express.static('./public'));
 
 var activeUsers = [];
 
@@ -78,4 +77,8 @@ io.on('connection', function (socket) {
 
 http.listen(portNumber, function () {
     console.log('listening on *:' + portNumber);
+});
+
+app.get('/', function(req, res){
+    res.sendFile(__dirname + '/public/EtiSocial.user.js');
 });
