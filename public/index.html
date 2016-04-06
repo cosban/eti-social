@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ETI Social test page</title>
+</head>
+<body>
+    Active users:
+    <ul id="active-users"></ul>
+</body>
+<script src="https://cdn.socket.io/socket.io-1.4.5.js"></script>
+
+<script>
+    var socket = io();
+    var users = [];
+
+    function drawUsers() {
+        console.log('drawing users:', users);
+        var ul = document.querySelector('#active-users');
+        ul.innerHTML = '';
+        users.forEach(function (user) {
+            ul.innerHTML += '<li>' + user.name + '</li>';
+        });
+    }
+
+    socket.on('activeUsers', function (activeUsers) {
+        users = activeUsers;
+        drawUsers();
+    });
+    socket.on('joined', function (joining) {
+        console.log(joining.name, 'joined the room');
+        users.push(joining);
+        drawUsers();
+    });
+    socket.on('left', function (leaving) {
+        console.log(leaving.name, 'left the room');
+        users.splice(users.indexOf(users.filter(function (user) {
+            return user.name === leaving.name;
+        })[0]), 1);
+        drawUsers();
+    });
+
+
+    socket.emit('topic', {
+        user: {
+          name: 'Goku'
+        },
+        id: 12346
+    });
+</script>
+</html>
