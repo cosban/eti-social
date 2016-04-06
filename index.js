@@ -3,10 +3,7 @@ var app = express();
 var http = require('http').Server(app);
 var io = require('socket.io')(http);
 var portNumber = process.env.PORT || 3000;
-
 var util = require('./helpers/util');
-
-
 
 var activeUsers = [];
 
@@ -79,6 +76,4 @@ http.listen(portNumber, function () {
     console.log('listening on *:' + portNumber);
 });
 
-app.get('/', function(req, res){
-    res.sendFile(__dirname + '/public/EtiSocial.user.js');
-});
+app.use(express.static('./public'));
