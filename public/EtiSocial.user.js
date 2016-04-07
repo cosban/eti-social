@@ -66,7 +66,7 @@
     socket.emit('topic', topic);
 
     function drawUsers() {
-        if (users.length === 1 && users[0] === getUsername()) {
+        if (users.length === 1 && users[0].name === topic.user.name) {
             return;
         }
         ul.innerHTML = '';
