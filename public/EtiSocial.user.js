@@ -14,8 +14,7 @@
 (function () {
     'use strict';
 
-    //var socket = io('http://eti-social.herokuapp.com');
-    var socket = io('http://localhost:3000');
+    var socket = io('http://eti-social.herokuapp.com');
     var users = [];
     var topicId = parseInt(location.href.match(/topic=(\d+)/)[1]);
     var tags = [];
