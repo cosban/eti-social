@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.5
+// @version      0.0.6
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -65,23 +65,23 @@
     socket.emit('topic', topic);
 
     /*var kill, killed = false;
-    document.addEventListener('visibilitychange', function (event) {
-        clearTimeout(kill);
+     document.addEventListener('visibilitychange', function (event) {
+     clearTimeout(kill);
 
-        var hidden = document.visibilityState === 'hidden';
-        if(hidden && !killed) {
-            kill = setTimeout(function () {
-                socket.emit('leave');
-                killed = true;
-            }, 30000);
-        }
-        else {
-            if(killed) {
-                killed = false;
-                socket.emit('topic', topic);
-            }
-        }
-    });*/
+     var hidden = document.visibilityState === 'hidden';
+     if(hidden && !killed) {
+     kill = setTimeout(function () {
+     socket.emit('leave');
+     killed = true;
+     }, 30000);
+     }
+     else {
+     if(killed) {
+     killed = false;
+     socket.emit('topic', topic);
+     }
+     }
+     });*/
 
     var drawn = false;
 
@@ -97,8 +97,9 @@
     }
 
     function getUsername() {
-        var username = localStorage.getItem('eti-username') || prompt('Enter your nickname!');
-        localStorage.setItem('eti-username', username);
+        var username = localStorage.getItem('eti-social-username') ||
+            document.querySelector('.userbar a').innerHTML.match(/(.+?) \(.+?\)/)[1];
+        localStorage.setItem('eti-social-username', username);
         return username;
     }
 
