@@ -54,7 +54,7 @@ io.on('connection', function (socket) {
 
             log('[topic]', user.name, topicData.id);
 
-            socket.on('disconnect', function () {
+            function leaveTopic () {
                 user.topics.remove(topic);
 
                 if(user.topics.propFilter('id', topic.id).length === 0) {
@@ -67,7 +67,10 @@ io.on('connection', function (socket) {
                     activeUsers.remove(user);
                     log('[[disconnect user]]', user.name);
                 }
-            });
+            }
+
+            socket.on('disconnect', leaveTopic);
+            socket.on('leave', leaveTopic);
         });
     });
 });

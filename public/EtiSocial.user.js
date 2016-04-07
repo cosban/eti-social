@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1
+// @version      0.0.2
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -14,7 +14,8 @@
 (function () {
     'use strict';
 
-    var socket = io('http://eti-social.herokuapp.com');
+    //var socket = io('http://eti-social.herokuapp.com');
+    var socket = io('http://localhost:3000');
     var users = [];
     var topicId = parseInt(location.href.match(/topic=(\d+)/)[1]);
     var tags = [];
@@ -55,11 +56,32 @@
         drawUsers();
     });
 
-    socket.emit('topic', {
+    var topic = {
         user: {
             name: getUsername()
         },
         id: topicId
+    };
+
+    socket.emit('topic', topic);
+
+    var kill, killed = false;
+    document.addEventListener('visibilitychange', function (event) {
+        clearTimeout(kill);
+
+        var hidden = document.visibilityState === 'hidden';
+        if(hidden && !killed) {
+            kill = setTimeout(function () {
+                socket.emit('leave');
+                killed = true;
+            }, 30000);
+        }
+        else {
+            if(killed) {
+                killed = false;
+                socket.emit('topic', topic);
+            }
+        }
     });
 
     var drawn = false;
