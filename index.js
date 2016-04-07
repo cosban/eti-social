@@ -53,7 +53,6 @@ io.on('connection', function (socket) {
             socket.join(topic.id);
             socket.emit('activeUsers', activeUsers.inTopic(topic).propMap('name'));
             socket.on('disconnect', leaveTopic);
-            socket.on('leave', leaveTopic);
 
             log('[topic]', user.name, topicData.id);
 

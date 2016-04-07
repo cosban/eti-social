@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9.3
+// @version      0.0.9.4
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -16,19 +16,27 @@
 
     var socket,
         users = [],
+        friends = [],
         drawn = false,
-        ul = document.createElement('ul'),
+        ui = document.createElement('div'),
+        topicUl = document.createElement('ul'),
+        friendsUl = document.createElement('ul'),
         urlPrefix = location.href.match(/^(https?)/i)[1],
         topicId = parseInt(location.href.match(/topic=(\d+)/)[1]),
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
-        styles = [
+        uiStyles = [
             'position: fixed',
             'top: 0',
             'font-size: 12px',
             'left: 15px',
             'padding: 2px',
             'background-color: rgba(255, 255, 255, 0.78)',
-            'list-style: none'
+            'display: none'
+        ],
+        listStyles = [
+            'list-style: none',
+            'padding: 0',
+            'margin: 0'
         ];
 
     if (!tags.length || tags.filter(function (tag) {
@@ -42,18 +50,29 @@
         console.log('Running ETI Social');
     }
 
+    socket.on('friends', function (activeFriends) {
+        friends = activeFriends;
+        drawUsers();
+    });
+
     socket.on('activeUsers', function (activeUsers) {
         users = activeUsers;
         drawUsers();
     });
     socket.on('joined', function (joining) {
+        console.log('[joined]', joining.name);
         users.push(joining);
         drawUsers();
     });
     socket.on('left', function (leaving) {
-        users.splice(users.indexOf(users.filter(function (user) {
-            return user.name === leaving.name;
-        })[0]), 1);
+        console.log('> [left]', leaving.name);
+        var user = users.filter(function (user) {
+            return user.name === leaving.name
+        })[0];
+        if (user) {
+            var i = users.indexOf(user);
+            users.splice(i, 1);
+        }
         drawUsers();
     });
 
@@ -66,23 +85,39 @@
 
     socket.emit('topic', topic);
 
+    // build UI
+    ui.setAttribute('style', uiStyles.join(';'));
+    topicUl.setAttribute('style', listStyles.join(';'));
+    friendsUl.setAttribute('style', listStyles.join(';'));
+    ui.appendChild(topicUl);
+    ui.appendChild(friendsUl);
+    document.body.appendChild(ui);
+
     function drawUsers() {
-        if (users.length === 1 && users[0].name === topic.user.name) {
-            if(drawn) {
-                document.body.removeChild(ul);
-                drawn = false;
-            }
-            return;
-        }
-        ul.innerHTML = '';
+        topicUl.innerHTML = '';
+        friendsUl.innerHTML = '';
+
         users.forEach(function (user) {
-            ul.innerHTML += '<li>' + user.name + '</li>';
+            topicUl.innerHTML += '<li>' + user.name + '</li>';
         });
-        if (!drawn) {
-            ul.setAttribute('style', styles.join(';'));
-            document.body.appendChild(ul);
-            drawn = true;
+        friends.forEach(function (user) {
+            friendsUl.innerHTML += '<li>' + user.name + '</li>';
+        });
+
+        var show = users.length > 1 || users[0] !== topic.user.name || friends.length > 0;
+        toggle(ui, show);
+    }
+
+    function toggle(el, show) {
+        var style = el.getAttribute('style') || '';
+        style = style.replace(/display:\s*.+?;?/ig, '');
+        if (show) {
+            style = 'display:block;' + style;
         }
+        else {
+            style = 'display:none;' + style;
+        }
+        el.setAttribute('style', style);
     }
 
     function getUsername() {
