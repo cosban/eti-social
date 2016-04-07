@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.6
+// @version      0.0.7
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -31,13 +31,15 @@
 
 
     var ul = document.createElement('ul');
-    ul.setAttribute('style', ['position: fixed',
+    ul.setAttribute('style', [
+        'position: fixed',
         'top: 0',
-        'font-size: 16px',
-        'border: 1px solid black',
+        'font-size: 12px',
         'right: 15px',
-        'padding: 10px 10px 10px 25px',
-        'background-color: rgba(255, 255, 255, 0.38)'].join(';'));
+        'padding: 2px',
+        'background-color: rgba(255, 255, 255, 0.78)',
+        'list-style: none'
+    ].join(';'));
 
 
     socket.on('activeUsers', function (activeUsers) {
