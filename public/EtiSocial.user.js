@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9
+// @version      0.0.9.1
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -14,12 +14,23 @@
 (function () {
     'use strict';
 
-    var urlPrefix = location.href.match(/^(https?)/i)[1];
-    var socket = io(urlPrefix + '://eti-social.herokuapp.com');
-    var users = [];
-    var topicId = parseInt(location.href.match(/topic=(\d+)/)[1]);
-    var tags = [];
-    tags.push.apply(tags, document.querySelectorAll('h2 a'));
+    var users = [],
+        drawn = false,
+        ul = document.createElement('ul'),
+        urlPrefix = location.href.match(/^(https?)/i)[1],
+        socket = io(urlPrefix + '://eti-social.herokuapp.com'),
+        topicId = parseInt(location.href.match(/topic=(\d+)/)[1]),
+        tags = Array.apply(this, document.querySelectorAll('h2 a')),
+        styles = [
+            'position: fixed',
+            'top: 0',
+            'font-size: 12px',
+            'left: 15px',
+            'padding: 2px',
+            'background-color: rgba(255, 255, 255, 0.78)',
+            'list-style: none'
+        ];
+
     if (!tags.length || tags.filter(function (tag) {
             return tag.innerHTML.trim().match(/^Anonymous$/i);
         }).length > 0) {
@@ -29,19 +40,6 @@
     else {
         console.log('Running ETI Social');
     }
-
-
-    var ul = document.createElement('ul');
-    ul.setAttribute('style', [
-        'position: fixed',
-        'top: 0',
-        'font-size: 12px',
-        'left: 15px',
-        'padding: 2px',
-        'background-color: rgba(255, 255, 255, 0.78)',
-        'list-style: none'
-    ].join(';'));
-
 
     socket.on('activeUsers', function (activeUsers) {
         users = activeUsers;
@@ -67,35 +65,18 @@
 
     socket.emit('topic', topic);
 
-    /*var kill, killed = false;
-     document.addEventListener('visibilitychange', function (event) {
-     clearTimeout(kill);
-
-     var hidden = document.visibilityState === 'hidden';
-     if(hidden && !killed) {
-     kill = setTimeout(function () {
-     socket.emit('leave');
-     killed = true;
-     }, 30000);
-     }
-     else {
-     if(killed) {
-     killed = false;
-     socket.emit('topic', topic);
-     }
-     }
-     });*/
-
-    var drawn = false;
-
     function drawUsers() {
+        if (users.length === 1 && users[0] === getUsername()) {
+            return;
+        }
         ul.innerHTML = '';
         users.forEach(function (user) {
             ul.innerHTML += '<li>' + user.name + '</li>';
         });
         if (!drawn) {
-            drawn = true;
+            ul.setAttribute('style', styles.join(';'));
             document.body.appendChild(ul);
+            drawn = true;
         }
     }
 

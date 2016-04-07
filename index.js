@@ -47,10 +47,13 @@ io.on('connection', function (socket) {
                 topic = {id: topicData.id};
                 emit(user, 'joined', topic);
             }
+
             user.topics.push(topic);
 
             socket.join(topic.id);
             socket.emit('activeUsers', activeUsers.inTopic(topic).propMap('name'));
+            socket.on('disconnect', leaveTopic);
+            socket.on('leave', leaveTopic);
 
             log('[topic]', user.name, topicData.id);
 
@@ -68,9 +71,6 @@ io.on('connection', function (socket) {
                     log('[[disconnect user]]', user.name);
                 }
             }
-
-            socket.on('disconnect', leaveTopic);
-            socket.on('leave', leaveTopic);
         });
     });
 });
