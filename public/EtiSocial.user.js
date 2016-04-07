@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9.4
+// @version      0.0.9.5
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -67,7 +67,7 @@
     socket.on('left', function (leaving) {
         console.log('> [left]', leaving.name);
         var user = users.filter(function (user) {
-            return user.name === leaving.name
+            return user.name === leaving.name;
         })[0];
         if (user) {
             var i = users.indexOf(user);
@@ -104,7 +104,7 @@
             friendsUl.innerHTML += '<li>' + user.name + '</li>';
         });
 
-        var show = users.length > 1 || users[0] !== topic.user.name || friends.length > 0;
+        var show = users.length > 1 || users[0].name !== topic.user.name || friends.length > 0;
         toggle(ui, show);
     }
 
