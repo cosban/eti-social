@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9.6
+// @version      0.0.9.7
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -15,10 +15,12 @@
     'use strict';
 
     var socket,
-        users = [],
+        usersInTopic = [],
         friends = [],
+        requests = [],
         drawn = false,
         ui = document.createElement('div'),
+        friendsList = document.createElement('div'),
         topicUl = document.createElement('ul'),
         friendsUl = document.createElement('ul'),
         urlPrefix = location.href.match(/^(https?)/i)[1],
@@ -37,6 +39,10 @@
             'list-style: none',
             'padding: 0',
             'margin: 0'
+        ],
+        friendStyles = [
+            'border-top: 1px solid black',
+            'margin-top:  10px'
         ];
 
     if (!tags.length || tags.filter(function (tag) {
@@ -50,28 +56,42 @@
         console.log('Running ETI Social');
     }
 
-    socket.on('friends', function (activeFriends) {
-        friends = activeFriends;
+    socket.on('users', function (users) {
+        usersInTopic = users.inTopic;
+        friends = users.friends;
+
         drawUsers();
     });
-
-    socket.on('activeUsers', function (activeUsers) {
-        users = activeUsers;
+    socket.on('friendJoined', function (joining) {
+        console.log('[friend joined]', joining.name);
+        friends.push(joining);
         drawUsers();
+    });
+    socket.on('friendLeft', function (leaving) {
+        console.log('[friend left]', leaving.name);
+        var i = friends.map(function (user) {
+            return user.name;
+        }).indexOf(leaving.name);
+
+        if (i > -1) {
+            friends.splice(i, 1);
+            drawUsers();
+        }
     });
     socket.on('joined', function (joining) {
         console.log('[joined]', joining.name);
-        users.push(joining);
+        usersInTopic.push(joining);
         drawUsers();
     });
     socket.on('left', function (leaving) {
         console.log('> [left]', leaving.name);
-        var user = users.filter(function (user) {
+
+        var user = usersInTopic.filter(function (user) {
             return user.name === leaving.name;
         })[0];
         if (user) {
-            var i = users.indexOf(user);
-            users.splice(i, 1);
+            var i = usersInTopic.indexOf(user);
+            usersInTopic.splice(i, 1);
         }
         drawUsers();
     });
@@ -89,23 +109,62 @@
     ui.setAttribute('style', uiStyles.join(';'));
     topicUl.setAttribute('style', listStyles.join(';'));
     friendsUl.setAttribute('style', listStyles.join(';'));
+    friendsList.setAttribute('style', friendStyles.join(';'));
+    friendsList.innerHTML = '<small>Online friends:</small>';
     ui.appendChild(topicUl);
-    ui.appendChild(friendsUl);
+    ui.appendChild(friendsList);
+    friendsList.appendChild(friendsUl);
     document.body.appendChild(ui);
 
     function drawUsers() {
+        var friendNames = friends.map(function (user) {
+            return user.name;
+        });
         topicUl.innerHTML = '';
         friendsUl.innerHTML = '';
 
-        users.forEach(function (user) {
-            topicUl.innerHTML += '<li>' + user.name + '</li>';
+        usersInTopic.sort(function (a, b) {
+            return a.friend ? 0 : 1;
+        }).forEach(function (user) {
+            user.friend = user.friend || friendNames.indexOf(user.name) > -1;
+            var li = document.createElement('li');
+            li.setAttribute('style', 'display:flex; justify-content:space-between');
+            li.innerHTML = user.name;
+            li.appendChild(friendButton(user));
+            topicUl.appendChild(li);
         });
         friends.forEach(function (user) {
-            friendsUl.innerHTML += '<li>' + user.name + '</li>';
+            friendsUl.innerHTML += '<li>' + user.name + ' </li>';
         });
 
-        var show = users.length || friends.length;
+        var show = usersInTopic.length || friends.length;
         toggle(ui, show);
+        toggle(friendsList, friends.length);
+    }
+
+    function friendButton(user) {
+        var btn = document.createElement('div');
+        btn.setAttribute('style', 'margin-left: 15px');
+
+        if (user.friend) {
+            btn.innerHTML = '<3';
+        }
+        else if (!user.pending) {
+            var a = document.createElement('a');
+            a.innerHTML = '+';
+            a.addEventListener('click', function () {
+                socket.emit('friendRequest', user);
+                user.pending = true;
+                drawUsers();
+            });
+            a.setAttribute('style', 'cursor: pointer; font-size: 16px; line-height: 1');
+            btn.appendChild(a);
+        }
+        else {
+            btn.innerHTML = '<small>(pending)</small>';
+        }
+
+        return btn;
     }
 
     function toggle(el, show) {
