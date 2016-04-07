@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9.2
+// @version      0.0.9.3
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -14,11 +14,11 @@
 (function () {
     'use strict';
 
-    var users = [],
+    var socket,
+        users = [],
         drawn = false,
         ul = document.createElement('ul'),
         urlPrefix = location.href.match(/^(https?)/i)[1],
-        socket = io(urlPrefix + '://eti-social.herokuapp.com'),
         topicId = parseInt(location.href.match(/topic=(\d+)/)[1]),
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
         styles = [
@@ -38,6 +38,7 @@
         return;
     }
     else {
+        socket = io(urlPrefix + '://eti-social.herokuapp.com');
         console.log('Running ETI Social');
     }
 
