@@ -104,7 +104,7 @@
             friendsUl.innerHTML += '<li>' + user.name + '</li>';
         });
 
-        var show = users.length > 1 || users[0].name !== topic.user.name || friends.length > 0;
+        var show = users.length || friends.length;
         toggle(ui, show);
     }
 

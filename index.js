@@ -52,7 +52,9 @@ io.on('connection', function (socket) {
             user.topics.push(topic);
 
             socket.join(topic.id);
-            socket.emit('activeUsers', activeUsers.inTopic(topic).propMap('name'));
+            socket.emit('activeUsers', activeUsers.filter(function (activeUser) {
+                return activeUser.name !== user.name;
+            }).inTopic(topic).propMap('name'));
             socket.on('disconnect', leaveTopic);
 
             log('[topic]', user.name, topicData.id);
