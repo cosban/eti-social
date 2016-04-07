@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9.1
+// @version      0.0.9.2
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -67,6 +67,10 @@
 
     function drawUsers() {
         if (users.length === 1 && users[0].name === topic.user.name) {
+            if(drawn) {
+                document.body.removeChild(ul);
+                drawn = false;
+            }
             return;
         }
         ul.innerHTML = '';
