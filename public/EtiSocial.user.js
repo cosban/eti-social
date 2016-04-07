@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9.5
+// @version      0.0.9.6
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -121,10 +121,7 @@
     }
 
     function getUsername() {
-        var username = localStorage.getItem('eti-social-username') ||
-            document.querySelector('.userbar a').innerHTML.match(/(.+?) \(.+?\)/)[1];
-        localStorage.setItem('eti-social-username', username);
-        return username;
+        return document.querySelector('.userbar a').innerHTML.match(/(.+?) \(.+?\)/)[1];
     }
 
 })();
