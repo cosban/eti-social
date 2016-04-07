@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.8
+// @version      0.0.9
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -36,7 +36,7 @@
         'position: fixed',
         'top: 0',
         'font-size: 12px',
-        'right: 15px',
+        'left: 15px',
         'padding: 2px',
         'background-color: rgba(255, 255, 255, 0.78)',
         'list-style: none'
