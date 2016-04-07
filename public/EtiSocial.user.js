@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.2
+// @version      0.0.3
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
