@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.1.2
+// @version      0.1.3
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -43,7 +43,7 @@ Array.prototype.findUser = function (user, remove) {
         urlPrefix = location.href.match(/^(https?)/i)[1],
         topicId = parseInt(location.href.match(/topic=(\d+)/)[1]),
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
-        debug = true,
+        debug = false,
         uiStyles = [
             'position: fixed',
             'top: 0',
