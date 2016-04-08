@@ -63,6 +63,8 @@ io.on('connection', function (socket) {
             socket.on('disconnect', leaveTopic);
 
             Friendships.ofUser(user).then(function (friendships) {
+                log('resolved friendships:', friendships);
+
                 var friends = friendships.friends.map(function (user) {
                     return user.name;
                 });
