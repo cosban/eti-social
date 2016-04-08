@@ -38,6 +38,8 @@ function emit(user, action, topic) {
 io.on('connection', function (socket) {
     var req = socket.request;
     var clientIp = socket.request.connection.remoteAddress;
+    var ip = socket.handshake.headers.host;
+    console.log('IP:', ip);
 
     socket.on('topic', function (topicData) {
         connect(topicData, clientIp).then(function (user) {
