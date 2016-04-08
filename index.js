@@ -36,7 +36,6 @@ function emit(user, action, topic) {
 }
 
 io.on('connection', function (socket) {
-    var req = socket.request;
     var clientIp = socket.handshake.headers['x-forwarded-for'];
 
     socket.on('topic', function (topicData) {
