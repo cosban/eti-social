@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.0.9.8
+// @version      0.0.9.9
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -153,6 +153,7 @@
 
         var show = usersInTopic.length || friends.length;
         toggle(ui, show);
+        toggle(topicUl, usersInTopic.length);
         toggle(friendsList, friends.length);
     }
 
@@ -183,7 +184,7 @@
 
     function toggle(el, show) {
         var style = el.getAttribute('style') || '';
-        style = style.replace(/display:\s*.+?;?/ig, '');
+        style = style.replace(/display:\s*.+?(;|$)/ig, '');
         if (show) {
             style = 'display:block;' + style;
         }
