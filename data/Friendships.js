@@ -13,7 +13,7 @@ function get(prop, key) {
     return new Promise(function (res, rej) {
         client.hget('user:' + key, prop, function (err, result) {
             if (err) return rej(err);
-            res(JSON.parse(result));
+            res(JSON.parse(result) || []);
         });
     });
 }
@@ -45,8 +45,8 @@ function remove(prop, user, value) {
 
 function request(user, newFriend) {
 
-    get(requested, user.name).then(function (requestedList) {
-        if (requestedList.indexOf(newFriend.name) === -1) {
+    return get(requested, user.name).then(function (requestedList) {
+        if ((requestedList || []).indexOf(newFriend.name) === -1) {
             console.log(user.name, 'requested friendship with', newFriend.name);
 
             add(requests, newFriend.name, user.name);
@@ -62,10 +62,14 @@ function respondToRequest(user, newFriend, accepts) {
     remove(requests, user.name, newFriend.name);
     remove(requests, newFriend.name, user.name);
     remove(requested, user.name, newFriend.name);
-    remove(requested, newFriend.name, user.name);
+    var result = remove(requested, newFriend.name, user.name);
 
-    add(friends, user.name, newFriend.name);
-    add(friends, newFriend.name, user.name);
+    if (accepts) {
+        add(friends, user.name, newFriend.name);
+        result = add(friends, newFriend.name, user.name);
+    }
+
+    return result; // for chaining;
 }
 
 function ofUser(user) {
@@ -73,15 +77,15 @@ function ofUser(user) {
         var friendship = {};
 
         get(friends, user.name).then(function (list) {
-            friendship.friends = list.map(toUser);
+            friendship.friends = (list || []).map(toUser);
             resolve();
         }, rej);
         get(requests, user.name).then(function (list) {
-            friendship.requests = list.map(toUser);
+            friendship.requests = (list || []).map(toUser);
             resolve();
         }, rej);
         get(requested, user.name).then(function (list) {
-            friendship.requested = list.map(toUser);
+            friendship.requested = (list || []).map(toUser);
             resolve();
         }, rej);
 

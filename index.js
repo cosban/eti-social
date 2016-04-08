@@ -55,10 +55,24 @@ io.on('connection', function (socket) {
             socket.join(topic.id);
 
             socket.on('friendRequest', function (newFriend) {
-                Friendships.request(user, newFriend);
+                Friendships.request(user, newFriend).then(function () {
+                    connections.findUser(newFriend).forEach(function (sock) {
+                        sock.emit('friendRequest', user);
+                    });
+                });
             });
-            socket.on('respondToRequest', function (newFriend, response) {
-                Friendships.respondToRequest(user, newFriend, response);
+            socket.on('respondToRequest', function (newFriend, accepted) {
+                Friendships.respondToRequest(user, newFriend, accepted).then(function () {
+                    if(accepted) {
+                        connections.findUser(newFriend).forEach(function (sock) {
+                            sock.emit('friendJoined', user);
+
+                            connections.findUser(user).forEach(function (responder) {
+                                responder.emit('friendJoined', newFriend);
+                            });
+                        });
+                    }
+                });
             });
             socket.on('disconnect', leaveTopic);
 
@@ -75,10 +89,8 @@ io.on('connection', function (socket) {
                 if (user.joining) {
                     delete user.joining;
 
-                    connections.forEach(function (sock) {
-                        if (friends.indexOf(sock.etiUser.name) > -1) {
-                            sock.emit('friendJoined', user);
-                        }
+                    connections.withUsers(friendships.friends).forEach(function (sock) {
+                        sock.emit('friendJoined', user);
                     });
                 }
 
@@ -106,7 +118,8 @@ io.on('connection', function (socket) {
                 socket.emit('users', {
                     inTopic: usersInTopic,
                     friends: activeFriends,
-                    requests: friendships.requests
+                    requests: friendships.requests,
+                    requested: friendships.requested
                 });
             });
 
@@ -127,17 +140,9 @@ io.on('connection', function (socket) {
                     log('[[disconnect user]]', user.name);
 
                     Friendships.ofUser(user).then(function (friendships) {
-                        var friends = friendships.friends.map(function (user) {
-                            return user.name;
-                        });
-
-                        connections.filter(function (sock) {
-                            return friends.indexOf(sock.etiUser.name) > -1;
-                        }).forEach(function (sock) {
+                        connections.withUsers(friendships.friends).forEach(function (sock) {
                             sock.emit('friendLeft', user);
                         });
-                    }, function (err) {
-                        console.log('ERR', err);
                     });
                 }
             }

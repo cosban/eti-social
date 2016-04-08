@@ -16,6 +16,20 @@ Array.prototype.propMap = function (prop) {
         return result;
     });
 };
+Array.prototype.findUser = function (user) {
+    return this.filter(function (item) {
+            var thisName = item.etiUser ? item.etiUser.name : item.name;
+            return user.name === thisName;
+        }) || false;
+};
+Array.prototype.withUsers = function (users) {
+  return this.filter(function (socket) {
+      return users.filter(function (user) {
+          return user.name === socket.etiUser.name;
+      }).length > 0;
+  });
+};
+
 Array.prototype.inTopic = function (topic) {
     return this.filter(function (user) {
         return user.topics.propFilter('id', topic.id).length > 0;
