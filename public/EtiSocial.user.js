@@ -153,7 +153,7 @@
                     name: user.name,
                     friend: friend,
                     pending: pending
-                }
+                };
             }
 
             socket.emit('topic', topic);
