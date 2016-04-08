@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.1.0
+// @version      0.1.1
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -66,7 +66,9 @@ Array.prototype.findUser = function (user, remove) {
         return;
     }
     else {
-        socket = io(urlPrefix + '://eti-social.herokuapp.com');
+        socket = io(urlPrefix + '://eti-social.herokuapp.com', {
+            'sync disconnect on unload': true
+        });
         console.log('Running ETI Social');
     }
 
