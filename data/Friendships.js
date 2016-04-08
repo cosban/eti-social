@@ -89,7 +89,9 @@ function ofUser(user) {
         function resolve() {
             waiting--;
             if (!waiting) {
-                console.log('[friendship:' + user.name, friendship);
+                if(process.env.DEV) {                
+                    console.log('[friendship:' + user.name, friendship);
+                }
                 res(friendship);
             }
         }
