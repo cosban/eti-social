@@ -40,9 +40,7 @@
         listStyles = [
             'list-style: none',
             'padding: 0',
-            'margin: 0',
-            'border-bottom: 1px solid black',
-            'margin-bottom:  10px'
+            'margin: 0'
         ],
         friendStyles = [];
 
@@ -108,7 +106,9 @@
 
     // build UI
     ui.setAttribute('style', uiStyles.join(';'));
-    topicUl.setAttribute('style', listStyles.join(';'));
+    topicUl.setAttribute('style', listStyles.join(';') + [
+            ';border-bottom: 1px solid black',
+            'margin-bottom:  10px'].join(';'));
     friendsUl.setAttribute('style', listStyles.join(';'));
     friendsList.setAttribute('style', friendStyles.join(';'));
     showFriendsBtn.setAttribute('style', 'float:right; margin-left: 10px; cursor: pointer');
