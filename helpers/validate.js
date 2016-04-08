@@ -2,6 +2,7 @@ var request = require('request');
 
 module.exports = {
     etiLogin: function (user, ip) {
+        console.log('validating:', user, ip);
         return new Promise(function (res, rej) {
             var url = 'http://boards.endoftheinter.net/scripts/login.php?username=' + user + '&ip=' + ip;
 
