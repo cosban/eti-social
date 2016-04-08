@@ -8,6 +8,7 @@ module.exports = {
 
 function request (user, newFriend) {
     console.log(user.name, 'requested friendship with', newFriend.name);
+
     client.lrange(newFriend.name + '-requests', 0, -1, function (err, requests) {
         if(requests.indexOf(user.name) === -1) {
             client.lrange(user.name + '-requests', 0, -1, function (err, reqs) {
@@ -45,19 +46,16 @@ function ofUser (user) {
 
         client.lrange(user.name + '-friends', 0, -1, function (err, result) {
             if(err) return rej(err);
-            console.log('friends of ' + user.name, result.map(toUser));
             friends = result.map(toUser);
             resolve();
         });
         client.lrange(user.name + '-requests', 0, -1, function (err, result) {
             if(err) return rej(err);
-            console.log('requests for ' + user.name, result.map(toUser));
             requests = result.map(toUser);
             resolve();
         });
         client.lrange(user.name + '-requested', 0, -1, function (err, result) {
             if(err) return rej(err);
-            console.log('requests from ' + user.name, result.map(toUser));
             requested = result.map(toUser);
             resolve();
         });

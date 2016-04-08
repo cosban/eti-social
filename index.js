@@ -135,7 +135,6 @@ io.on('connection', function (socket) {
                         connections.filter(function (sock) {
                             return friends.indexOf(sock.etiUser.name) > -1;
                         }).forEach(function (sock) {
-                            console.log('friend online: ', sock, 'emitting friendLeft');
                             sock.emit('friendLeft', user);
                         });
                     }, function (err) {
