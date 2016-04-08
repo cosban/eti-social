@@ -23,6 +23,8 @@
         friendsList = document.createElement('div'),
         topicUl = document.createElement('ul'),
         friendsUl = document.createElement('ul'),
+        friendsCount = document.createElement('span'),
+        showFriendsBtn = document.createElement('a'),
         urlPrefix = location.href.match(/^(https?)/i)[1],
         topicId = parseInt(location.href.match(/topic=(\d+)/)[1]),
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
@@ -38,12 +40,11 @@
         listStyles = [
             'list-style: none',
             'padding: 0',
-            'margin: 0'
+            'margin: 0',
+            'border-bottom: 1px solid black',
+            'margin-bottom:  10px'
         ],
-        friendStyles = [
-            'border-top: 1px solid black',
-            'margin-top:  10px'
-        ];
+        friendStyles = [];
 
     if (!tags.length || tags.filter(function (tag) {
             return tag.innerHTML.trim().match(/^Anonymous$/i);
@@ -110,11 +111,23 @@
     topicUl.setAttribute('style', listStyles.join(';'));
     friendsUl.setAttribute('style', listStyles.join(';'));
     friendsList.setAttribute('style', friendStyles.join(';'));
-    friendsList.innerHTML = '<small>Online friends:</small>';
+    showFriendsBtn.setAttribute('style', 'float:right; margin-left: 10px; cursor: pointer');
+    friendsList.innerHTML = '<small>Friends Online: </small>';
+    friendsList.appendChild(friendsCount);
+    friendsList.appendChild(showFriendsBtn);
+    showFriendsBtn.innerHTML = ' <small>(show)</small>';
     ui.appendChild(topicUl);
     ui.appendChild(friendsList);
     friendsList.appendChild(friendsUl);
     document.body.appendChild(ui);
+
+    var showFriends = false;
+    toggle(friendsUl, false);
+    showFriendsBtn.addEventListener('click', function () {
+        showFriends = !showFriends;
+        showFriendsBtn.innerHTML = showFriends ? ' <small>(hide)</small>' : '<small>(show)</small>';
+        toggle(friendsUl, showFriends);
+    });
 
     function drawUsers() {
         var friendNames = friends.map(function (user) {
@@ -122,6 +135,7 @@
         });
         topicUl.innerHTML = '';
         friendsUl.innerHTML = '';
+        friendsCount.innerHTML = friends.length;
 
         usersInTopic.sort(function (a, b) {
             return a.friend ? 0 : 1;
