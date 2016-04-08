@@ -22,8 +22,6 @@ function connect(topicData, clientIp) {
                 joining: true
             };
             activeUsers.push(user);
-
-            log('[user]', username);
         }
         return user;
     }, function (err) {
@@ -77,8 +75,6 @@ io.on('connection', function (socket) {
             socket.on('disconnect', leaveTopic);
 
             Friendships.ofUser(user).then(function (friendships) {
-                log('resolved friendships:', friendships);
-
                 var friends = friendships.friends.map(function (user) {
                     return user.name;
                 });
@@ -123,7 +119,7 @@ io.on('connection', function (socket) {
                 });
             });
 
-            log('[topic]', user.name, topicData.id);
+            console.log('[' + (new Date()) + '] tid=' + topicData.id);
 
             function leaveTopic() {
                 user.topics.remove(topic);
@@ -132,12 +128,9 @@ io.on('connection', function (socket) {
                     emit(user, 'left', topic);
                 }
 
-                log('[[disconnect topic]]', user.name, topicData.id);
-
                 if (!user.topics.length) {
                     activeUsers.remove(user);
                     connections.remove(socket);
-                    log('[[disconnect user]]', user.name);
 
                     Friendships.ofUser(user).then(function (friendships) {
                         connections.withUsers(friendships.friends).forEach(function (sock) {

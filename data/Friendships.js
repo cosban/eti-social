@@ -47,8 +47,6 @@ function request(user, newFriend) {
 
     return get(requested, user.name).then(function (requestedList) {
         if ((requestedList || []).indexOf(newFriend.name) === -1) {
-            console.log(user.name, 'requested friendship with', newFriend.name);
-
             add(requests, newFriend.name, user.name);
             add(requested, user.name, newFriend.name);
         }
@@ -57,8 +55,6 @@ function request(user, newFriend) {
 }
 
 function respondToRequest(user, newFriend, accepts) {
-    console.log(user.name, accepts ? 'accepted' : 'rejected' + ' friendship with', newFriend.name);
-
     remove(requests, user.name, newFriend.name);
     remove(requests, newFriend.name, user.name);
     remove(requested, user.name, newFriend.name);
@@ -92,7 +88,6 @@ function ofUser(user) {
         var waiting = 3;
         function resolve() {
             waiting--;
-            console.log('resolved something... friendship:', friendship);
             if (!waiting) {
                 res(friendship);
             }
