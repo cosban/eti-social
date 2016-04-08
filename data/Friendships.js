@@ -85,8 +85,11 @@ function ofUser(user) {
             resolve();
         }, rej);
 
+        var waiting = 3;
         function resolve() {
-            if (friendship.friends && friendship.requests && friendship.requested) {
+            waiting--;
+            console.log('resolved something... friendship:', friendship);
+            if (!waiting) {
                 res(friendship);
             }
         }
