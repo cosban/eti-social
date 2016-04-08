@@ -122,6 +122,7 @@ io.on('connection', function (socket) {
             console.log('[' + (new Date()) + '] tid=' + topicData.id);
 
             function leaveTopic() {
+                connections.remove(socket);
                 user.topics.remove(topic);
 
                 if (user.topics.propFilter('id', topic.id).length === 0) {
@@ -130,7 +131,6 @@ io.on('connection', function (socket) {
 
                 if (!user.topics.length) {
                     activeUsers.remove(user);
-                    connections.remove(socket);
 
                     Friendships.ofUser(user).then(function (friendships) {
                         connections.withUsers(friendships.friends).forEach(function (sock) {
