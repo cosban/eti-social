@@ -1,4 +1,7 @@
-var client = require('redis').createClient(process.env.REDIS_URL || 'redis://localhost:6379');
+var client = require('redis').createClient(process.env.REDIS_URL || 'redis://localhost:6379'),
+    friends = 'friends',
+    requests = 'requests',
+    requested = 'requested';
 
 module.exports = {
     request: request,
@@ -6,73 +9,91 @@ module.exports = {
     ofUser: ofUser
 };
 
-function request (user, newFriend) {
-    console.log(user.name, 'requested friendship with', newFriend.name);
+function get(prop, key) {
+    return new Promise(function (res, rej) {
+        client.hget('user:' + key, prop, function (err, result) {
+            if (err) return rej(err);
+            res(JSON.parse(result));
+        });
+    });
+}
 
-    client.lrange(newFriend.name + '-requests', 0, -1, function (err, requests) {
-        if(requests.indexOf(user.name) === -1) {
-            client.lrange(user.name + '-requests', 0, -1, function (err, reqs) {
-                if(reqs.indexOf(newFriend.name) > -1) {
-                    // both have requested each other
-                    respondToRequest(user, newFriend, true);
-                }
-                else {
-                    client.lpush(newFriend.name + '-requests', user.name);
-                    client.lpush(user.name + '-requested', newFriend.name);
-                }
-            });
+function set(prop, key, value) {
+    return new Promise(function (res, rej) {
+        client.hset('user:' + key, prop, JSON.stringify(value), function (err, result) {
+            if (err) return rej(err);
+            res(result);
+        });
+    });
+}
+
+function add(prop, user, value) {
+    return get(prop, user).then(function (list) {
+        list.push(value);
+        return set(prop, user, list);
+    });
+}
+function remove(prop, user, value) {
+    return get(prop, user).then(function (list) {
+        var i = list.indexOf(value);
+        if (i > -1) {
+            list.splice(i, 1);
+            return set(prop, user, list);
         }
     });
 }
 
-function respondToRequest (user, newFriend, accepts) {
-    console.log(user.name, accepts ? 'accepted' : 'rejected'  + ' friendship with', newFriend.name);
+function request(user, newFriend) {
 
-    // remove all requests from both sides
-    client.lrem(user.name + '-requests', -1, newFriend.name);
-    client.lrem(newFriend.name + '-requests', -1, user.name);
-    client.lrem(user.name + '-requested', -1, newFriend.name);
-    client.lrem(newFriend.name + '-requested', -1, user.name);
+    get(requested, user.name).then(function (requestedList) {
+        if (requestedList.indexOf(newFriend.name) === -1) {
+            console.log(user.name, 'requested friendship with', newFriend.name);
 
-    if(accepts) {
-        client.lpush(user.name + '-friends', newFriend.name);
-        client.lpush(newFriend.name + '-friends', user.name);
-    }
+            add(requests, newFriend.name, user.name);
+            add(requested, user.name, newFriend.name);
+        }
+    });
+
 }
 
-function ofUser (user) {
-    return new Promise(function (res, rej) {
-        var friends, requests, requested;
+function respondToRequest(user, newFriend, accepts) {
+    console.log(user.name, accepts ? 'accepted' : 'rejected' + ' friendship with', newFriend.name);
 
-        client.lrange(user.name + '-friends', 0, -1, function (err, result) {
-            if(err) return rej(err);
-            friends = result.map(toUser);
+    remove(requests, user.name, newFriend.name);
+    remove(requests, newFriend.name, user.name);
+    remove(requested, user.name, newFriend.name);
+    remove(requested, newFriend.name, user.name);
+
+    add(friends, user.name, newFriend.name);
+    add(friends, newFriend.name, user.name);
+}
+
+function ofUser(user) {
+    return new Promise(function (res, rej) {
+        var friendship = {};
+
+        get(friends, user.name).then(function (list) {
+            friendship.friends = list.map(toUser);
             resolve();
-        });
-        client.lrange(user.name + '-requests', 0, -1, function (err, result) {
-            if(err) return rej(err);
-            requests = result.map(toUser);
+        }, rej);
+        get(requests, user.name).then(function (list) {
+            friendship.requests = list.map(toUser);
             resolve();
-        });
-        client.lrange(user.name + '-requested', 0, -1, function (err, result) {
-            if(err) return rej(err);
-            requested = result.map(toUser);
+        }, rej);
+        get(requested, user.name).then(function (list) {
+            friendship.requested = list.map(toUser);
             resolve();
-        });
+        }, rej);
 
         function resolve() {
-            if(friends && requests && requested) {
-                res({
-                    friends: friends,
-                    requests: requests,
-                    requested: requested
-                });
+            if (friendship.friends && friendship.requests && friendship.requested) {
+                res(friendship);
             }
         }
     })
 }
 
-function toUser (name) {
+function toUser(name) {
     return {
         name: name
     };
