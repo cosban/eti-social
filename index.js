@@ -4,20 +4,15 @@ var express = require('express'),
     io = require('socket.io')(http),
     portNumber = process.env.PORT || 3000,
     util = require('./helpers/util'),
+    validate = require('./helpers/validate'),
     Friendships = require('./data/Friendships');
 
 var activeUsers = [], connections = [];
 
-function validate(user, ip) {
-    return new Promise(function (res, rej) {
-        res(true);
-    });
-}
-
 function connect(topicData, clientIp) {
     var username = topicData.user.name;
 
-    return validate(username, clientIp).then(function () {
+    return validate.etiLogin(username, clientIp).then(function () {
         var user = activeUsers.propFilter('name', username)[0];
 
         if (!user) {
@@ -31,6 +26,8 @@ function connect(topicData, clientIp) {
             log('[user]', username);
         }
         return user;
+    }, function (err) {
+        console.log(err, username);
     });
 }
 
@@ -39,6 +36,7 @@ function emit(user, action, topic) {
 }
 
 io.on('connection', function (socket) {
+    var req = socket.request;
     var clientIp = socket.request.connection.remoteAddress;
 
     socket.on('topic', function (topicData) {
