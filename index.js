@@ -7,11 +7,6 @@ var express = require('express'),
     validate = require('./helpers/validate'),
     Friendships = require('./data/Friendships');
 
-    //debug
-    Friendships.ofUser({name:'- s otaku -'}).then(function (result) {
-        console.log('otakus friends:', result);
-    });
-
 var activeUsers = [], connections = [];
 
 function connect(username, clientIp) {
@@ -36,15 +31,6 @@ function emit(user, action, topic) {
         if(socket.topicId === topic.id) {
             socket.emit(action, socket.serializeUsers(user))
         }
-    });
-    //io.in(topic.id).emit(action, {name: user.name});
-}
-
-function usernames(arr) {
-    return arr.map(function (user) {
-        return {
-            name: user.name
-        };
     });
 }
 
