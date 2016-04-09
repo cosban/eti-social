@@ -72,8 +72,8 @@ io.on('connection', function (socket) {
                 }
                 else {
                     var usr = users;
-                    var friend = !!friendships.friends.findUser(usr);
-                    var pending = !friend && (friendships.requests.findUser(usr) || friendships.requested.findUser(usr));
+                    var friend = !!friendships.friends.findUser(usr)[0];
+                    var pending = !friend && (friendships.requests.findUser(usr)[0] || friendships.requested.findUser(usr)[0]);
 
                     return {
                         name: usr.name,
