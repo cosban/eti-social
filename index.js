@@ -53,9 +53,9 @@ io.on('connection', function (socket) {
         }
 
         socket.etiUser = user;
+        socket.join(topic.id);
         connections.push(socket);
         user.topics.push(topic);
-        socket.join(topic.id);
 
         socket.on('friendRequest', function (newFriend) {
             Friendships.request(user, newFriend).then(function () {
@@ -69,10 +69,9 @@ io.on('connection', function (socket) {
                 if(accepted) {
                     connections.findUser(newFriend).forEach(function (sock) {
                         sock.emit('friendJoined', user);
-
-                        connections.findUser(user).forEach(function (responder) {
-                            responder.emit('friendJoined', newFriend);
-                        });
+                    });
+                    connections.findUser(user).forEach(function (responder) {
+                        responder.emit('friendJoined', newFriend);
                     });
                 }
             });
