@@ -70,32 +70,21 @@ function respondToRequest(user, newFriend, accepts) {
 
 function ofUser(user) {
     return new Promise(function (res, rej) {
-        var friendship = {};
+        client.hmget('user:' + user.name, [friends, requests, requested], function (err, result) {
+            if(err) return rej(err);
+            
+            res({
+                friends: parseList(result[0]).map(toUser),
+                requests: parseList(result[1]).map(toUser),
+                requested: parseList(result[2]).map(toUser)
+            });
+        });
 
-        get(friends, user.name).then(function (list) {
-            friendship.friends = (list || []).map(toUser);
-            resolve();
-        }, rej);
-        get(requests, user.name).then(function (list) {
-            friendship.requests = (list || []).map(toUser);
-            resolve();
-        }, rej);
-        get(requested, user.name).then(function (list) {
-            friendship.requested = (list || []).map(toUser);
-            resolve();
-        }, rej);
-
-        var waiting = 3;
-        function resolve() {
-            waiting--;
-            if (!waiting) {
-                if(process.env.DEV) {                
-                    console.log('[friendship:' + user.name, friendship);
-                }
-                res(friendship);
-            }
-        }
     })
+}
+
+function parseList (str) {
+    return JSON.parse(str) || [];
 }
 
 function toUser(name) {

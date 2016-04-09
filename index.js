@@ -7,6 +7,11 @@ var express = require('express'),
     validate = require('./helpers/validate'),
     Friendships = require('./data/Friendships');
 
+    //debug
+    Friendships.ofUser({name:'- s otaku -'}).then(function (result) {
+        console.log('otakus friends:', result);
+    });
+
 var activeUsers = [], connections = [];
 
 function connect(username, clientIp) {
