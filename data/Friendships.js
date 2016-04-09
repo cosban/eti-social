@@ -71,8 +71,8 @@ function respondToRequest(user, newFriend, accepts) {
 function ofUser(user) {
     return new Promise(function (res, rej) {
         client.hmget('user:' + user.name, [friends, requests, requested], function (err, result) {
-            if(err) return rej(err);
-            
+            if (err) return rej(err);
+
             res({
                 friends: parseList(result[0]).map(toUser),
                 requests: parseList(result[1]).map(toUser),
@@ -83,7 +83,7 @@ function ofUser(user) {
     })
 }
 
-function parseList (str) {
+function parseList(str) {
     return JSON.parse(str) || [];
 }
 

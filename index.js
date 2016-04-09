@@ -28,8 +28,8 @@ function connect(username, clientIp) {
 
 function emit(user, action, topic) {
     connections.forEach(function (socket) {
-        if(socket.topicId === topic.id) {
-            socket.emit(action, socket.serializeUsers(user))
+        if (socket.topicId === topic.id) {
+            socket.emit(action, socket.serializeUsers(user));
         }
     });
 }
@@ -64,7 +64,7 @@ io.on('connection', function (socket) {
         });
         socket.on('respondToRequest', function (newFriend, accepted) {
             Friendships.respondToRequest(user, newFriend, accepted).then(function () {
-                if(accepted) {
+                if (accepted) {
                     connections.findUser(newFriend).forEach(function (sock) {
                         sock.emit('friendJoined', user);
                     });
@@ -100,7 +100,7 @@ io.on('connection', function (socket) {
             socket.serializeUsers = serializeUsers;
 
             function serializeUsers(users) {
-                if(users instanceof Array) {
+                if (users instanceof Array) {
                     return users.map(serializeUsers);
                 }
                 else {
@@ -137,17 +137,12 @@ io.on('connection', function (socket) {
                     })[0];
                 });
 
-
-            var emitting = {
+            socket.emit('users', {
                 inTopic: serializeUsers(usersInTopic),
                 friends: activeFriends,
                 requests: serializeUsers(friendships.requests),
                 requested: serializeUsers(friendships.requested)
-            };
-
-            console.log('emitting:', emitting);
-
-            socket.emit('users', emitting);
+            });
         });
     });
 });
