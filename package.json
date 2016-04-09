@@ -5,6 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index",
+    "build": "ng-annotate -a src/EtiSocial.user.js -o public/EtiSocial.user.js && minify --output public/EtiSocial.user.js public/EtiSocial.user.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "William McMillian",
@@ -14,5 +15,9 @@
     "redis": "^2.6.0-1",
     "request": "^2.70.0",
     "socket.io": "^1.4.5"
+  },
+  "devDependencies": {
+    "minifier": "^0.7.1",
+    "ng-annotate": "^1.2.1"
   }
 }
