@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.2.6
+// @version      0.2.7
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -161,6 +161,12 @@
             });
             socket.on('friendJoined', function (joining) {
                 topicData.friends.push(joining);
+
+                var inTopic = findUser(topicData.users, joining);
+                if(inTopic && inTopic.pending) {
+                    inTopic.friend = true;
+                    inTopic.pending = false;
+                }
                 notify(topicData);
             });
             socket.on('friendLeft', function (leaving) {
