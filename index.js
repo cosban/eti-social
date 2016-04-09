@@ -27,10 +27,8 @@ function connect(username, clientIp) {
 }
 
 function emit(user, action, topic) {
-    connections.forEach(function (socket) {
-        if (socket.topicId === topic.id) {
-            socket.emit(action, socket.serializeUsers(user));
-        }
+    forEach(io.in(topic.id).sockets, function (socket) {
+        socket.emit(action, socket.serializeUsers(user));
     });
 }
 
@@ -38,8 +36,6 @@ io.on('connection', function (socket) {
     var clientIp = socket.handshake.headers['x-forwarded-for'];
     var topicId = parseInt(socket.handshake.headers.referer.match(/topic=(\d+)/i)[1]);
     var username = socket.handshake.query.user;
-
-    socket.topicId = topicId;
 
     console.log('[' + (new Date()) + '] tid=' + topicId);
 

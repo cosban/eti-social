@@ -23,22 +23,24 @@ Array.prototype.findUser = function (user) {
         }) || false;
 };
 Array.prototype.withUsers = function (users) {
-  return this.filter(function (socket) {
-      return users.filter(function (user) {
-          return user.name === socket.etiUser.name;
-      }).length > 0;
-  });
+    return this.filter(function (socket) {
+        return users.filter(function (user) {
+                return user.name === socket.etiUser.name;
+            }).length > 0;
+    });
 };
-
 Array.prototype.inTopic = function (topic) {
     return this.filter(function (user) {
         return user.topics.propFilter('id', topic.id).length > 0;
     });
 };
 
-var count = 0;
+global.forEach = forEach;
 
-global.log = function () {
-    arguments[0] = ++count + '.\t' + arguments[0];
-    return console.log.apply(this, arguments);
-};
+function forEach(obj, handler) {
+    for (var prop in obj) {
+        if (obj.hasOwnProperty(prop)) {
+            handler(obj[prop]);
+        }
+    }
+}
