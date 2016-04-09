@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.2.4
+// @version      0.2.5
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -79,7 +79,7 @@
                     '<a class="gap-left small" ng-click="eti.toggleShowFriends()">{{ eti.showFriends ? "hide" : "show" }}</a></div>' +
                     '<ul ng-show="eti.showFriends">' + 
                     '<li ng-repeat="user in eti.topic.friends">' +
-                        '<a href="//boards.endoftheinter.net/showmessages.php?topic={{ user.topics[0].id }}">{{ user.name }}</a>' +
+                        '<a href="//boards.endoftheinter.net/showmessages.php?topic={{ user.topics[0].id }}&page={{ user.topics[0].page }}">{{ user.name }}</a>' +
                     '</li>' +
                     '</ul></div>' +
 

@@ -27,7 +27,7 @@ function connect(username, clientIp) {
 }
 
 function emit(user, action, topic) {
-    forEach(io.in(topic.id).sockets, function (socket) {
+    forEach(connections.propFilter('topicId', topic.id), function (socket) {
         socket.emit(action, socket.serializeUsers(user));
     });
 }
@@ -35,6 +35,7 @@ function emit(user, action, topic) {
 io.on('connection', function (socket) {
     var clientIp = socket.handshake.headers['x-forwarded-for'];
     var topicId = parseInt(socket.handshake.headers.referer.match(/topic=(\d+)/i)[1]);
+    var page = parseInt(socket.handshake.headers.referer.match(/page=(\d+)/i)[1] || 1);
     var username = socket.handshake.query.user;
 
     console.log('[' + (new Date()) + '] tid=' + topicId);
@@ -42,56 +43,26 @@ io.on('connection', function (socket) {
     connect(username, clientIp).then(function (user) {
         var topic = user.topics.propFilter('id', topicId)[0];
         if (!topic) {
-            topic = {id: topicId};
+            topic = {id: topicId, page: page};
             emit(user, 'joined', topic);
         }
 
-        socket.etiUser = user;
-        socket.join(topic.id);
-        connections.push(socket);
-        user.topics.push(topic);
+        socket.on('friendRequest', friendRequest);
+        socket.on('respondToRequest', respondToRequest);
+        socket.on('disconnect', disconnect);
 
-        socket.on('friendRequest', function (newFriend) {
-            Friendships.request(user, newFriend).then(function () {
-                connections.findUser(newFriend).forEach(function (sock) {
-                    sock.emit('friendRequest', user);
-                });
-            });
-        });
-        socket.on('respondToRequest', function (newFriend, accepted) {
-            Friendships.respondToRequest(user, newFriend, accepted).then(function () {
-                if (accepted) {
-                    connections.findUser(newFriend).forEach(function (sock) {
-                        sock.emit('friendJoined', user);
-                    });
-                    connections.findUser(user).forEach(function (responder) {
-                        responder.emit('friendJoined', newFriend);
-                    });
-                }
-            });
-        });
-        socket.on('disconnect', function () {
-            connections.remove(socket);
-            user.topics.remove(topic);
-
-            if (user.topics.propFilter('id', topic.id).length === 0) {
-                emit(user, 'left', topic);
-            }
-
-            if (!user.topics.length) {
-                activeUsers.remove(user);
-
-                Friendships.ofUser(user).then(function (friendships) {
-                    connections.withUsers(friendships.friends).forEach(function (sock) {
-                        sock.emit('friendLeft', user);
-                    });
-                });
-            }
+        Friendships.ofUser(user).then(initialize).then(function (friendships) {
+            socket.emit('users', friendships);
         });
 
-        Friendships.ofUser(user).then(function (friendships) {
+        function initialize(friendships) {
             var usersInTopic, activeFriends;
 
+            connections.push(socket);
+            user.topics.push(topic);
+            socket.join(topicId);
+            socket.topicId = topicId;
+            socket.etiUser = user;
             socket.friendships = friendships;
             socket.serializeUsers = serializeUsers;
 
@@ -133,13 +104,59 @@ io.on('connection', function (socket) {
                     })[0];
                 });
 
-            socket.emit('users', {
+            return {
                 inTopic: serializeUsers(usersInTopic),
                 friends: activeFriends,
                 requests: serializeUsers(friendships.requests),
                 requested: serializeUsers(friendships.requested)
+            };
+        }
+
+        function friendRequest(newFriend) {
+            Friendships.request(user, newFriend).then(function () {
+                connections.findUser(newFriend).forEach(function (sock) {
+                    sock.emit('friendRequest', user);
+                });
             });
-        });
+        }
+
+        function respondToRequest(newFriend, accepted) {
+            Friendships.respondToRequest(user, newFriend, accepted).then(function () {
+                if (accepted) {
+                    var notifiedSelf = false;
+
+                    connections.findUser(newFriend).forEach(function (sock) {
+                        sock.emit('friendJoined', user);
+
+                        if (!notifiedSelf) { // notify responder that her new friend is online
+                            connections.findUser(user).forEach(function (responder) {
+                                responder.emit('friendJoined', newFriend);
+                            });
+                            notifiedSelf = true;
+                        }
+                    });
+                }
+            });
+        }
+
+        function disconnect() {
+            connections.remove(socket);
+            user.topics.remove(topic);
+
+            if (user.topics.propFilter('id', topic.id).length === 0) {
+                emit(user, 'left', topic);
+            }
+
+            if (!user.topics.length) {
+                activeUsers.remove(user);
+
+                Friendships.ofUser(user).then(function (friendships) {
+                    connections.withUsers(friendships.friends).forEach(function (sock) {
+                        sock.emit('friendLeft', user);
+                    });
+                });
+            }
+        }
     });
 });
 
