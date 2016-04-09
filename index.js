@@ -32,7 +32,12 @@ function connect(username, clientIp) {
 }
 
 function emit(user, action, topic) {
-    io.in(topic.id).emit(action, {name: user.name});
+    connections.forEach(function (socket) {
+        if(socket.topicId = topic.id) {
+            socket.emit(action, socket.serializeUsers(user))
+        }
+    });
+    //io.in(topic.id).emit(action, {name: user.name});
 }
 
 function usernames(arr) {
@@ -47,6 +52,8 @@ io.on('connection', function (socket) {
     var clientIp = socket.handshake.headers['x-forwarded-for'];
     var topicId = parseInt(socket.handshake.headers.referer.match(/topic=(\d+)/i)[1]);
     var username = socket.handshake.query.user;
+
+    socket.topicId = topicId;
 
     console.log('[' + (new Date()) + '] tid=' + topicId);
 
@@ -103,6 +110,26 @@ io.on('connection', function (socket) {
         Friendships.ofUser(user).then(function (friendships) {
             var usersInTopic, activeFriends;
 
+            socket.friendships = friendships;
+            socket.serializeUsers = serializeUsers;
+
+            function serializeUsers(users) {
+                if(users instanceof Array) {
+                    return users.map(serializeUsers);
+                }
+                else {
+                    var usr = users;
+                    var friend = !!friendships.friends.findUser(usr);
+                    var pending = !friend && (friendships.requests.findUser(usr) || friendships.requested.findUser(usr));
+
+                    return {
+                        name: usr.name,
+                        friend: friend,
+                        pending: pending
+                    };
+                }
+            }
+
             if (user.joining) {
                 delete user.joining;
 
@@ -126,10 +153,10 @@ io.on('connection', function (socket) {
 
 
             var emitting = {
-                inTopic: usernames(usersInTopic),
+                inTopic: serializeUsers(usersInTopic),
                 friends: activeFriends,
-                requests: usernames(friendships.requests),
-                requested: usernames(friendships.requested)
+                requests: serializeUsers(friendships.requests),
+                requested: serializeUsers(friendships.requested)
             };
 
             console.log('emitting:', emitting);

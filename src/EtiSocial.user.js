@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.2.3
+// @version      0.2.4
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -60,13 +60,13 @@
                         'eti-social {position:fixed;top:0;font-size:12px;left:15px;padding:2px;background-color:rgba(255, 255, 255, 0.78)}' + 
                         '.small {font-size:10px}' +
                         '.gap-left {margin-left:15px} ' + 
-                        'a {cursor:pointer;} ' + 
+                        'a {cursor:pointer;} ' +
                         'ul { margin: 0; padding: 10px; list-style: none;} ' + 
                         '.flex { display: flex; justify-content: space-between; }' + 
                     '</style>' + 
                     '<div ng-show="eti.topic.users.length">In topic <ul>' + 
                     '<li class="flex" ng-repeat="user in eti.topic.users">' + 
-                        '<div>{{ user.name }}</div>' + 
+                        '<div>{{ user.name }}</div>' +
                         '<div class="gap-left">' +
                             '<div ng-if="user.friend"><3</div>' + 
                             '<div ng-if="user.pending" style="font-size:10px;color:gray;">(pending)</div>' +
@@ -144,21 +144,11 @@
                 },
                 fetchInfo = $q.defer();
 
-            function toUser (user) {
-                var friend = user.friend || findUser(topicData.friends, user),
-                    pending = (findUser(topicData.requests, user) || findUser(topicData.requested, user)) && !friend;
-                return {
-                    name: user.name,
-                    friend: friend,
-                    pending: pending
-                };
-            }
-
             socket.on('users', function (userData) {
                 topicData.friends = userData.friends;
                 topicData.requests = userData.requests;
                 topicData.requested = userData.requested;
-                topicData.users = userData.inTopic.map(toUser);
+                topicData.users = userData.inTopic;
 
                 fetchInfo.resolve(topicData);
             });
@@ -191,8 +181,6 @@
                 handlers.push(handler);
             }
             function notify (data) {
-                topicData.users = topicData.users.map(toUser);
-
                 handlers.forEach(function (handler) {
                     handler(data);
                 });
