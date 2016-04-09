@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.2.1
+// @version      0.2.2
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -33,7 +33,6 @@
     var socket,
         ui = document.createElement('div'),
         urlPrefix = location.href.match(/^(https?)/i)[1],
-        topicId = parseInt(location.href.match(/topic=(\d+)/)[1]),
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
         debug = false;
 
@@ -46,7 +45,8 @@
     else {
         var url = debug ? 'http://localhost:3000' : urlPrefix + '://eti-social.herokuapp.com';
         socket = io(url, {
-            'sync disconnect on unload': true
+            'sync disconnect on unload': true,
+            query: {user: getUsername()}
         });
         console.log('Running ETI Social');
     }
@@ -130,12 +130,6 @@
                     requests: null,
                     requested: null
                 },
-                topic = {
-                    id: topicId,
-                    user: {
-                        name: getUsername()
-                    }
-                },
                 fetchInfo = $q.defer();
 
             function toUser (user) {
@@ -147,8 +141,6 @@
                     pending: pending
                 };
             }
-
-            socket.emit('topic', topic);
 
             socket.on('users', function (userData) {
                 topicData.friends = userData.friends;
