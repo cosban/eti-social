@@ -35,7 +35,7 @@ function emit(user, action, topic) {
 io.on('connection', function (socket) {
     var clientIp = socket.handshake.headers['x-forwarded-for'];
     var topicId = parseInt(socket.handshake.headers.referer.match(/topic=(\d+)/i)[1]);
-    var page = parseInt(socket.handshake.headers.referer.match(/page=(\d+)/i)[1] || 1);
+    var page = parseInt((socket.handshake.headers.referer.match(/page=(\d+)/i) || [])[1] || 1);
     var username = socket.handshake.query.user;
 
     console.log('[' + (new Date()) + '] tid=' + topicId);
