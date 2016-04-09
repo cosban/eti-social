@@ -58,6 +58,7 @@
             return {
                 template: '<style>' + 
                         'eti-social {position:fixed;top:0;font-size:12px;left:15px;padding:2px;background-color:rgba(255, 255, 255, 0.78)}' + 
+                        '.small {font-size:10px}' +
                         '.gap-left {margin-left:15px} ' + 
                         'a {cursor:pointer;} ' + 
                         'ul { margin: 0; padding: 10px; list-style: none;} ' + 
@@ -74,8 +75,9 @@
                     '</li>' + 
                     '</ul></div>' +
 
-                    '<div ng-show="eti.topic.friends.length">Friends: {{ eti.topic.friends.length }}' + 
-                    '<ul>' + 
+                    '<div ng-show="eti.topic.friends.length"><div class="flex">Friends: {{ eti.topic.friends.length }}' + 
+                    '<a class="gap-left small" ng-click="eti.toggleShowFriends()">{{ eti.showFriends ? "hide" : "show" }}</a></div>' +
+                    '<ul ng-show="eti.showFriends">' + 
                     '<li ng-repeat="user in eti.topic.friends">' +
                         '<a href="//boards.endoftheinter.net/showmessages.php?topic={{ user.topics[0].id }}">{{ user.name }}</a>' +
                     '</li>' +
@@ -95,8 +97,16 @@
                     var vm = this;
 
                     vm.topic = null;
+                    vm.showFriends = JSON.parse(localStorage.getItem('eti-social-showFriends')) || false;
+                    vm.toggleShowFriends = toggleShowFriends;
                     vm.request = request;
                     vm.respond = respond;
+
+
+                    function toggleShowFriends() {
+                        vm.showFriends = !vm.showFriends;
+                        localStorage.setItem('eti-social-showFriends', vm.showFriends);
+                    }
 
                     function request (user) {
                         socket.emit('friendRequest', user);
