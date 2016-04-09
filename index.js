@@ -33,7 +33,7 @@ function connect(username, clientIp) {
 
 function emit(user, action, topic) {
     connections.forEach(function (socket) {
-        if(socket.topicId = topic.id) {
+        if(socket.topicId === topic.id) {
             socket.emit(action, socket.serializeUsers(user))
         }
     });
