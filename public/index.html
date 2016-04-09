@@ -3,13 +3,64 @@
 <head>
     <meta charset="UTF-8">
     <title>ETI Social Download</title>
+    <style>
+        html, body {
+            height: 100%;
+            width: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1 {
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            display: flex;
+            flex-flow: column;
+            align-items: center;
+            justify-content: space-between;
+            font-family: sans-serif;
+        }
+
+        .title {
+            margin-top: 25px;
+            display: flex;
+            flex-flow: column;
+            align-items: center;
+        }
+
+        a.dl {
+            display: flex;
+            cursor: pointer;
+            background-color: #56b0bb;
+            color: white;
+            padding: 25px 100px;
+            align-items: center;
+            justify-content: center;
+            font-size:25px;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        a.dl:hover {
+            background-color: #4b99a2;
+        }
+
+        a.credits {
+            text-decoration: none;
+            font-size: 10px;
+            color: black;
+        }
+    </style>
 </head>
 <body>
-Downloading userscript in a few seconds...
+    <div class="title">
+        <h1>sociaLL</h1>
+        <small>~ where yeti friendships bloom ~</small>
+    </div>
+    <a class="dl" href="EtiSocial.user.js">Download</a>
+    <a class="credits" target="_blank" href="https://github.com/william-mcmillian/eti-social">source / contribute</a>
 </body>
-<script>
-    setTimeout(function () {
-        location.replace('/EtiSocial.user.js');
-    }, 3000);
-</script>
 </html>
