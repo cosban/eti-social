@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.2.5
+// @version      0.2.6
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -75,7 +75,7 @@
                     '</li>' + 
                     '</ul></div>' +
 
-                    '<div ng-show="eti.topic.friends.length"><div class="flex">Friends: {{ eti.topic.friends.length }}' + 
+                    '<div ng-show="eti.topic.friends.length"><div class="flex">Friends: {{ eti.topic.friends.length }} of {{ eti.topic.totalFriends }}' +
                     '<a class="gap-left small" ng-click="eti.toggleShowFriends()">{{ eti.showFriends ? "hide" : "show" }}</a></div>' +
                     '<ul ng-show="eti.showFriends">' + 
                     '<li ng-repeat="user in eti.topic.friends">' +
@@ -146,6 +146,7 @@
 
             socket.on('users', function (userData) {
                 topicData.friends = userData.friends;
+                topicData.totalFriends = userData.totalFriends;
                 topicData.requests = userData.requests;
                 topicData.requested = userData.requested;
                 topicData.users = userData.inTopic;

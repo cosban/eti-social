@@ -107,8 +107,8 @@ io.on('connection', function (socket) {
             return {
                 inTopic: serializeUsers(usersInTopic),
                 friends: activeFriends,
-                requests: serializeUsers(friendships.requests),
-                requested: serializeUsers(friendships.requested)
+                totalFriends: friendships.friends.length,
+                requests: serializeUsers(friendships.requests)
             };
         }
 
