@@ -9,18 +9,16 @@ var express = require('express'),
 
 var activeUsers = [], connections = [];
 
-function connect(username, clientIp, active) {
+function connect(username, clientIp) {
     return validate.etiLogin(username, clientIp).then(function () {
         var user = activeUsers.propFilter('name', username)[0];
         if (!user) {
             user = {
                 name: username,
                 topics: [],
-                joining: true && active
+                joining: true
             };
-            if (active) {
-                activeUsers.push(user);
-            }
+            activeUsers.push(user);
         }
         return user;
     }, function (err) {
@@ -160,16 +158,16 @@ io.on('connection', function (socket) {
                 if (user.topics.propFilter('id', topic.id).length === 0) {
                     emit(user, 'left', topic);
                 }
+            }
 
-                if (!user.topics.length) {
-                    activeUsers.remove(user);
+            if (!connections.findUser(user)[0]) {
+                activeUsers.remove(user);
 
-                    Friendships.ofUser(user).then(function (friendships) {
-                        connections.withUsers(friendships.friends).forEach(function (sock) {
-                            sock.emit('friendLeft', user);
-                        });
+                Friendships.ofUser(user).then(function (friendships) {
+                    connections.withUsers(friendships.friends).forEach(function (sock) {
+                        sock.emit('friendLeft', user);
                     });
-                }
+                });
             }
         }
     });
