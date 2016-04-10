@@ -1,11 +1,13 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.2.7
+// @version      0.2.8
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
 // @match        https://boards.endoftheinter.net/showmessages.php*
+// @match        http://boards.endoftheinter.net/topics/*
+// @match        https://boards.endoftheinter.net/topics/*
 // @require      https://cdn.socket.io/socket.io-1.4.5.js
 // @require      https://ajax.googleapis.com/ajax/libs/angularjs/1.4.5/angular.min.js
 // @grant        none
@@ -34,16 +36,17 @@
         ui = document.createElement('div'),
         urlPrefix = location.href.match(/^(https?)/i)[1],
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
+        topicList = !location.href.match(/showmessages\.php/),
         debug = false;
 
-    if (!tags.length || tags.filter(function (tag) {
+    if (!topicList && (!tags.length || tags.filter(function (tag) {
             return tag.innerHTML.trim().match(/^Anonymous$/i);
-        }).length > 0) {
+        }).length > 0)) {
         console.log('Killing ETI Social script (Anonymous)');
         return;
     }
     else {
-        var url = debug ? 'http://localhost:3000' : urlPrefix + '://eti-social.herokuapp.com';
+        var url = debug ? '//localhost:3000' : '//eti-social.herokuapp.com';
         socket = io(url, {
             'sync disconnect on unload': true,
             query: {user: getUsername()}

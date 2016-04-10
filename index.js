@@ -9,16 +9,18 @@ var express = require('express'),
 
 var activeUsers = [], connections = [];
 
-function connect(username, clientIp) {
+function connect(username, clientIp, active) {
     return validate.etiLogin(username, clientIp).then(function () {
         var user = activeUsers.propFilter('name', username)[0];
         if (!user) {
             user = {
                 name: username,
                 topics: [],
-                joining: true
+                joining: true && active
             };
-            activeUsers.push(user);
+            if (active) {
+                activeUsers.push(user);
+            }
         }
         return user;
     }, function (err) {
@@ -34,17 +36,21 @@ function emit(user, action, topic) {
 
 io.on('connection', function (socket) {
     var clientIp = socket.handshake.headers['x-forwarded-for'];
-    var topicId = parseInt(socket.handshake.headers.referer.match(/topic=(\d+)/i)[1]);
+    var topicId = parseInt((socket.handshake.headers.referer.match(/topic=(\d+)/i) || [])[1] || 0);
     var page = parseInt((socket.handshake.headers.referer.match(/page=(\d+)/i) || [])[1] || 1);
     var username = socket.handshake.query.user;
 
     console.log('[' + (new Date()) + '] tid=' + topicId);
 
-    connect(username, clientIp).then(function (user) {
-        var topic = user.topics.propFilter('id', topicId)[0];
-        if (!topic) {
-            topic = {id: topicId, page: page};
-            emit(user, 'joined', topic);
+    connect(username, clientIp, topicId !== 0).then(function (user) {
+        var topic;
+
+        if (topicId) {
+            topic = user.topics.propFilter('id', topicId)[0];
+            if (!topic) {
+                topic = {id: topicId, page: page};
+                emit(user, 'joined', topic);
+            }
         }
 
         socket.on('friendRequest', friendRequest);
@@ -56,15 +62,42 @@ io.on('connection', function (socket) {
         });
 
         function initialize(friendships) {
-            var usersInTopic, activeFriends;
+            var usersInTopic = [], activeFriends = [];
 
             connections.push(socket);
-            user.topics.push(topic);
-            socket.join(topicId);
-            socket.topicId = topicId;
+
+            if (topic) {
+                user.topics.push(topic);
+                socket.join(topicId);
+                socket.topicId = topicId;
+            }
+
             socket.etiUser = user;
             socket.friendships = friendships;
             socket.serializeUsers = serializeUsers;
+
+            activeFriends = activeUsers
+                .filter(function (activeUser) {
+                    return friendships.friends.filter(function (friend) {
+                        return friend.name === activeUser.name
+                    })[0];
+                });
+
+            if (user.joining) {
+                delete user.joining;
+
+                connections.withUsers(friendships.friends).forEach(function (sock) {
+                    sock.emit('friendJoined', user);
+                });
+            }
+            if (topic) {
+                usersInTopic = activeUsers
+                    .inTopic(topic)
+                    .filter(function (activeUser) {
+                        return activeUser.name !== user.name;
+                    });
+            }
+
 
             function serializeUsers(users) {
                 if (users instanceof Array) {
@@ -82,27 +115,6 @@ io.on('connection', function (socket) {
                     };
                 }
             }
-
-            if (user.joining) {
-                delete user.joining;
-
-                connections.withUsers(friendships.friends).forEach(function (sock) {
-                    sock.emit('friendJoined', user);
-                });
-            }
-
-            usersInTopic = activeUsers
-                .inTopic(topic)
-                .filter(function (activeUser) {
-                    return activeUser.name !== user.name;
-                });
-
-            activeFriends = activeUsers
-                .filter(function (activeUser) {
-                    return friendships.friends.filter(function (friend) {
-                        return friend.name === activeUser.name
-                    })[0];
-                });
 
             return {
                 inTopic: serializeUsers(usersInTopic),
@@ -141,20 +153,23 @@ io.on('connection', function (socket) {
 
         function disconnect() {
             connections.remove(socket);
-            user.topics.remove(topic);
 
-            if (user.topics.propFilter('id', topic.id).length === 0) {
-                emit(user, 'left', topic);
-            }
+            if (topic) {
+                user.topics.remove(topic);
 
-            if (!user.topics.length) {
-                activeUsers.remove(user);
+                if (user.topics.propFilter('id', topic.id).length === 0) {
+                    emit(user, 'left', topic);
+                }
 
-                Friendships.ofUser(user).then(function (friendships) {
-                    connections.withUsers(friendships.friends).forEach(function (sock) {
-                        sock.emit('friendLeft', user);
+                if (!user.topics.length) {
+                    activeUsers.remove(user);
+
+                    Friendships.ofUser(user).then(function (friendships) {
+                        connections.withUsers(friendships.friends).forEach(function (sock) {
+                            sock.emit('friendLeft', user);
+                        });
                     });
-                });
+                }
             }
         }
     });
