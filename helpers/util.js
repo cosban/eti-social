@@ -17,6 +17,11 @@ Array.prototype.propMap = function (prop) {
     });
 };
 Array.prototype.findUser = function (user) {
+    if (!user) {
+        console.log('ERROR, no user');
+        return [];
+    }
+
     return this.filter(function (item) {
             var thisName = item.etiUser ? item.etiUser.name : item.name;
             return user.name === thisName;
