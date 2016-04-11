@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.2.8.1
+// @version      0.2.8.2
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -17,11 +17,11 @@
 (function () {
     'use strict';
 
-    function findUser (arr, user, remove) {
+    function findUser(arr, user, remove) {
         var found = arr.filter(function (thisUser) {
-            var thisName = thisUser.name;
-            return user.name === thisName;
-        })[0] || false;
+                var thisName = thisUser.name;
+                return user.name === thisName;
+            })[0] || false;
         if (remove && found) {
             arr.splice(arr.indexOf(found), 1);
         }
@@ -29,7 +29,15 @@
     }
 
     function getUsername() {
-        return document.querySelector('.userbar a').innerHTML.match(/(.+?) \(.+?\)/)[1];
+        var name = document.querySelector('.userbar a').innerHTML.match(/(.+?) \(.+?\)/)[1];
+        if (/^cute girl/i.test(name)) {
+            var replace = localStorage.getItem('eti-social-replace-cute-girl') || prompt('WARNING! Cute Girl script detected. the sociaLL script needs your real username. Should I ignore the Cute Girl? (ignore this message if your name really starts with Cute Girl)');
+            localStorage.setItem('eti-social-replace-cute-girl', replace);
+            if (replace) {
+                name = name.replace(/^cute girl\s?/i, '');
+            }
+        }
+        return name;
     }
 
     var socket,
@@ -59,43 +67,43 @@
 
         .directive('etiSocial', function (Topic) {
             return {
-                template: '<style>' + 
-                        'eti-social {position:fixed;top:0;font-size:12px;left:15px;padding:2px;background-color:rgba(255, 255, 255, 0.78)}' + 
-                        '.small {font-size:10px}' +
-                        '.gap-left {margin-left:15px} ' + 
-                        'a {cursor:pointer;} ' +
-                        'ul { margin: 0; padding: 10px; list-style: none;} ' + 
-                        '.flex { display: flex; justify-content: space-between; }' + 
-                    '</style>' + 
-                    '<div ng-show="eti.topic.users.length">In topic <ul>' + 
-                    '<li class="flex" ng-repeat="user in eti.topic.users">' + 
-                        '<div>{{ user.name }}</div>' +
-                        '<div class="gap-left">' +
-                            '<div ng-if="user.friend"><3</div>' + 
-                            '<div ng-if="user.pending" style="font-size:10px;color:gray;">(pending)</div>' +
-                            '<a ng-if="!user.friend && !user.pending" ng-click="eti.request(user)">+</a>' + 
-                        '</div>' +
-                    '</li>' + 
-                    '</ul></div>' +
+                template: '<style>' +
+                'eti-social {position:fixed;top:0;font-size:12px;left:15px;padding:2px;background-color:rgba(255, 255, 255, 0.78)}' +
+                '.small {font-size:10px}' +
+                '.gap-left {margin-left:15px} ' +
+                'a {cursor:pointer;} ' +
+                'ul { margin: 0; padding: 10px; list-style: none;} ' +
+                '.flex { display: flex; justify-content: space-between; }' +
+                '</style>' +
+                '<div ng-show="eti.topic.users.length">In topic <ul>' +
+                '<li class="flex" ng-repeat="user in eti.topic.users">' +
+                '<div>{{ user.name }}</div>' +
+                '<div class="gap-left">' +
+                '<div ng-if="user.friend"><3</div>' +
+                '<div ng-if="user.pending" style="font-size:10px;color:gray;">(pending)</div>' +
+                '<a ng-if="!user.friend && !user.pending" ng-click="eti.request(user)">+</a>' +
+                '</div>' +
+                '</li>' +
+                '</ul></div>' +
 
-                    '<div ng-show="eti.topic.friends.length"><div class="flex">Friends: {{ eti.topic.friends.length }} of {{ eti.topic.totalFriends }}' +
-                    '<a class="gap-left small" ng-click="eti.toggleShowFriends()">{{ eti.showFriends ? "hide" : "show" }}</a></div>' +
-                    '<ul ng-show="eti.showFriends">' + 
-                    '<li ng-repeat="user in eti.topic.friends">' +
-                        '<a ng-if="user.topics.length" href="//boards.endoftheinter.net/showmessages.php?topic={{ user.topics[0].id }}&page={{ user.topics[0].page }}">{{ user.name }}</a>' +
-                        '<div ng-if="!user.topics.length">{{ user.name }}</div>' +
-                    '</li>' +
-                    '</ul></div>' +
+                '<div ng-show="eti.topic.friends.length"><div class="flex">Friends: {{ eti.topic.friends.length }} of {{ eti.topic.totalFriends }}' +
+                '<a class="gap-left small" ng-click="eti.toggleShowFriends()">{{ eti.showFriends ? "hide" : "show" }}</a></div>' +
+                '<ul ng-show="eti.showFriends">' +
+                '<li ng-repeat="user in eti.topic.friends">' +
+                '<a ng-if="user.topics.length" href="//boards.endoftheinter.net/showmessages.php?topic={{ user.topics[0].id }}&page={{ user.topics[0].page }}">{{ user.name }}</a>' +
+                '<div ng-if="!user.topics.length">{{ user.name }}</div>' +
+                '</li>' +
+                '</ul></div>' +
 
-                    '<div ng-show="eti.topic.requests.length">Requests: <ul>' + 
-                    '<li ng-repeat="user in eti.topic.requests" class="flex">' + 
-                        '<div>{{ user.name }}</div>' + 
-                        '<div class="gap-left">' +
-                            '<a ng-click="eti.respond(user, true)">Yes</a>' +
-                            '<a ng-click="eti.respond(user, false)" class="gap-left">No</a>' +
-                        '</div>' +
-                    '</li>' + 
-                    '</ul></div>',
+                '<div ng-show="eti.topic.requests.length">Requests: <ul>' +
+                '<li ng-repeat="user in eti.topic.requests" class="flex">' +
+                '<div>{{ user.name }}</div>' +
+                '<div class="gap-left">' +
+                '<a ng-click="eti.respond(user, true)">Yes</a>' +
+                '<a ng-click="eti.respond(user, false)" class="gap-left">No</a>' +
+                '</div>' +
+                '</li>' +
+                '</ul></div>',
                 controllerAs: 'eti',
                 controller: function ($scope, Topic) {
                     var vm = this;
@@ -112,17 +120,17 @@
                         localStorage.setItem('eti-social-showFriends', vm.showFriends);
                     }
 
-                    function request (user) {
+                    function request(user) {
                         socket.emit('friendRequest', user);
                         user.pending = true;
                     }
 
-                    function respond (user, accept) {
+                    function respond(user, accept) {
                         socket.emit('respondToRequest', user, accept);
                         findUser(vm.topic.requests, user, true);
 
                         var inTopic = findUser(vm.topic.users, user);
-                        if(inTopic) {
+                        if (inTopic) {
                             inTopic.pending = false;
                             inTopic.friend = !!accept;
                         }
@@ -139,7 +147,7 @@
             };
         })
 
-        .factory('Topic', function($q) {
+        .factory('Topic', function ($q) {
             var topicData = {
                     users: null,
                     friends: null,
@@ -167,7 +175,7 @@
                 topicData.friends.push(joining);
 
                 var inTopic = findUser(topicData.users, joining);
-                if(inTopic && inTopic.pending) {
+                if (inTopic && inTopic.pending) {
                     inTopic.friend = true;
                     inTopic.pending = false;
                 }
@@ -188,10 +196,11 @@
 
             var handlers = [];
 
-            function onUpdate (handler) {
+            function onUpdate(handler) {
                 handlers.push(handler);
             }
-            function notify (data) {
+
+            function notify(data) {
                 handlers.forEach(function (handler) {
                     handler(data);
                 });
@@ -202,7 +211,7 @@
                     return fetchInfo.promise;
                 },
 
-              //  events
+                //  events
                 onUpdate: onUpdate,
                 notify: notify
             };

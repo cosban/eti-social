@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index",
-    "build": "ng-annotate -a src/EtiSocial.user.js -o public/EtiSocial.user.js && minify --output public/EtiSocial.user.js public/EtiSocial.user.js",
+    "build": "ng-annotate -a src/EtiSocial.user.js -o public/EtiSocial.user.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "William McMillian",
