@@ -68,6 +68,7 @@
         .directive('etiSocial', function (Topic) {
             return {
                 template: '<style>' +
+                'eti-social, eti-social a {color:black;}' +
                 'eti-social {position:fixed;top:0;font-size:12px;left:15px;padding:2px;background-color:rgba(255, 255, 255, 0.78)}' +
                 '.small {font-size:10px}' +
                 '.gap-left {margin-left:15px} ' +
