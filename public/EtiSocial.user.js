@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         ETI Social
 // @namespace    http://tampermonkey.net/
-// @version      0.2.8.3
+// @version      0.2.8.4
 // @description  Social ETI experience
 // @author       - s otaku -
 // @match        http://boards.endoftheinter.net/showmessages.php*
@@ -80,7 +80,7 @@
 
     angular.module('eti.social', [])
 
-        .directive('etiSocial', function (Topic) {
+        .directive('etiSocial', ["Topic", function (Topic) {
             return {
                 template: style +
                 '<span class="eti-social">' +
@@ -141,7 +141,7 @@
 				*/
                 '</div></span></span>',
                 controllerAs: 'eti',
-                controller: function ($scope, Topic) {
+                controller: ["$scope", "Topic", function ($scope, Topic) {
                     var vm = this;
 
                     vm.topic = null;
@@ -220,11 +220,11 @@
                     function toggleRightUI() {
                       localStorage.setItem('eti-social-rightUI', vm.rightUI);
                     }
-                }
+                }]
             };
-        })
+        }])
 
-        .factory('Topic', function ($q) {
+        .factory('Topic', ["$q", function ($q) {
             var topicData = {
                     users: null,
                     friends: null,
@@ -292,7 +292,7 @@
                 onUpdate: onUpdate,
                 notify: notify
             };
-        });
+        }]);
 
     // build UI
     ui.innerHTML = '<eti-social></eti-social>';
