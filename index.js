@@ -41,8 +41,8 @@ io.on('connection', function (socket) {
     var share = socket.handshake.query.share === "true";
 
     console.log('[' + (new Date()) + '] tid=' + topicId);
-    
-    if(hide) {
+
+    if (hide) {
         return;
     }
     connect(username, clientIp, hide, topicId !== 0, share).then(function (user) {

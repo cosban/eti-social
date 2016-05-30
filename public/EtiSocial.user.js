@@ -47,20 +47,20 @@
         topicList = !location.href.match(/showmessages\.php/),
         debug = false,
         style = '<style>' +
-        'span > span {display:inline-block;vertical-align:text-top;}' +
-        '.eti-social, .eti-social a {color:black;}' +
-        '.eti-social {position:fixed;top:0;font-size:12px;' + (JSON.parse(
-            localStorage.getItem('eti-social-rightUI')) ?
-            "right:15px;" : "left:15px;") +
-        'padding:2px;background-color:rgba(255, 255, 255, 0.78);}' +
-        '.settings { padding: 0px 30px 0 25px;margin: 0 0 0 5px;width:200px;border-left:1px rgba(0, 0, 0, 0.1) solid;background-color:rgba(255, 255, 255, 0.78);}' +
-        '.small {font-size:10px}' +
-        '.gap-left {margin-left: 15px} ' +
-        'label {font-weight: bold}' +
-        'a {cursor:pointer;} ' +
-        'ul { margin: 0; padding: 10px; list-style: none;} ' +
-        '.flex { display: flex; justify-content: space-between; }' +
-        '</style>';
+            'span > span {display:inline-block;vertical-align:text-top;}' +
+            '.eti-social, .eti-social a {color:black;}' +
+            '.eti-social {position:fixed;top:0;font-size:12px;' + (JSON.parse(
+                localStorage.getItem('eti-social-rightUI')) ?
+                "right:15px;" : "left:15px;") +
+            'padding:2px;background-color:rgba(255, 255, 255, 0.78);}' +
+            '.settings { padding: 0px 30px 0 25px;margin: 0 0 0 5px;width:200px;border-left:1px rgba(0, 0, 0, 0.1) solid;background-color:rgba(255, 255, 255, 0.78);}' +
+            '.small {font-size:10px}' +
+            '.gap-left {margin-left: 15px} ' +
+            'label {font-weight: bold}' +
+            'a {cursor:pointer;} ' +
+            'ul { margin: 0; padding: 10px; list-style: none;} ' +
+            '.flex { display: flex; justify-content: space-between; }' +
+            '</style>';
 
     if (!topicList && (!tags.length || tags.filter(function (tag) {
             return tag.innerHTML.trim().match(/^Anonymous$/i);
@@ -103,7 +103,7 @@
                 '</div></div>' +
 
                 '<div ng-show="eti.topic.friends.length"><div class="flex">Friends: {{ eti.topic.friends.length }} of {{ eti.topic.totalFriends }}' +
-                '<a class="gap-left small" ng-click="eti.toggleShowFriends()">{{ eti.showFriends ? "hide" : "show" }}</a>'+
+                '<a class="gap-left small" ng-click="eti.toggleShowFriends()">{{ eti.showFriends ? "hide" : "show" }}</a>' +
                 // Unicode U+2699 (the 'gear' emoji) was introduced in Unicode V4.1 in 2005 but seems to only work in browsers
                 '<a style="margin-left:5px;" ng-click="eti.toggleShowSettings()">⚙</a>' +
                 '</div>' +
@@ -203,27 +203,27 @@
                     vm.blocked = null;
 
                     function toggleShowSettings() {
-                      vm.showSettings = !vm.showSettings;
+                        vm.showSettings = !vm.showSettings;
                     }
 
                     function toggleInvisibility() {
-                      localStorage.setItem('eti-social-isInvisible', vm.isInvisible);
+                        localStorage.setItem('eti-social-isInvisible', vm.isInvisible);
                     }
 
                     function toggleTopicSharing() {
-                      localStorage.setItem('eti-social-enableTopicSharing', vm.enableTopicSharing);
+                        localStorage.setItem('eti-social-enableTopicSharing', vm.enableTopicSharing);
                     }
 
                     function toggleFriendChat() {
-                      localStorage.setItem('eti-social-enableFriendChat', vm.enableFriendChat);
+                        localStorage.setItem('eti-social-enableFriendChat', vm.enableFriendChat);
                     }
 
                     function toggleTopicChat() {
-                      localStorage.setItem('eti-social-enableTopicChat', vm.enableTopicChat);
+                        localStorage.setItem('eti-social-enableTopicChat', vm.enableTopicChat);
                     }
 
                     function toggleRightUI() {
-                      localStorage.setItem('eti-social-rightUI', vm.rightUI);
+                        localStorage.setItem('eti-social-rightUI', vm.rightUI);
                     }
                 }
             };
