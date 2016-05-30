@@ -9,7 +9,7 @@ var express = require('express'),
 
 var activeUsers = [], connections = [];
 
-function connect(username, clientIp) {
+function connect(username, clientIp, hide) {
     return validate.etiLogin(username, clientIp).then(function () {
         var user = activeUsers.propFilter('name', username)[0];
         if (!user) {
@@ -37,13 +37,18 @@ io.on('connection', function (socket) {
     var topicId = parseInt((socket.handshake.headers.referer.match(/topic=(\d+)/i) || [])[1] || 0);
     var page = parseInt((socket.handshake.headers.referer.match(/page=(\d+)/i) || [])[1] || 1);
     var username = socket.handshake.query.user;
+    var hide = socket.handshake.query.hide === "true";
+    var share = socket.handshake.query.share === "true";
 
     console.log('[' + (new Date()) + '] tid=' + topicId);
-
-    connect(username, clientIp, topicId !== 0).then(function (user) {
+    
+    if(hide) {
+        return;
+    }
+    connect(username, clientIp, hide, topicId !== 0, share).then(function (user) {
         var topic;
 
-        if (topicId) {
+        if (topicId && share) {
             topic = user.topics.propFilter('id', topicId)[0];
             if (!topic) {
                 topic = {id: topicId, page: page};

@@ -51,7 +51,7 @@
         '.eti-social, .eti-social a {color:black;}' +
         '.eti-social {position:fixed;top:0;font-size:12px;' + (JSON.parse(
             localStorage.getItem('eti-social-rightUI')) ?
-          "right:15px;" : "left:15px;") +
+            "right:15px;" : "left:15px;") +
         'padding:2px;background-color:rgba(255, 255, 255, 0.78);}' +
         '.settings { padding: 0px 30px 0 25px;margin: 0 0 0 5px;width:200px;border-left:1px rgba(0, 0, 0, 0.1) solid;background-color:rgba(255, 255, 255, 0.78);}' +
         '.small {font-size:10px}' +
@@ -70,9 +70,11 @@
     }
     else {
         var url = debug ? '//localhost:3000' : '//eti-social.herokuapp.com';
+        var hide = JSON.parse(localStorage.getItem('eti-social-isInvisible'));
+        var share = JSON.parse(localStorage.getItem('eti-social-enableTopicSharing'));
         socket = io(url, {
             'sync disconnect on unload': true,
-            query: {user: getUsername()}
+            query: {user: getUsername(), hide: hide, share: share}
         });
         console.log('Running ETI Social');
     }
@@ -95,6 +97,10 @@
                 '</div>' +
                 '</li>' +
                 '</ul></div>' +
+                '<div ng-hide="eti.topic.friends.length"><div class="flex">{{ eti.isInvisible ? "Invisible mode active" : "All alone :(" }}' +
+                // Unicode U+2699 (the 'gear' emoji) was introduced in Unicode V4.1 in 2005 but seems to only work in browsers
+                '<a style="margin-left:5px;" ng-click="eti.toggleShowSettings()">⚙</a>' +
+                '</div></div>' +
 
                 '<div ng-show="eti.topic.friends.length"><div class="flex">Friends: {{ eti.topic.friends.length }} of {{ eti.topic.totalFriends }}' +
                 '<a class="gap-left small" ng-click="eti.toggleShowFriends()">{{ eti.showFriends ? "hide" : "show" }}</a>'+
@@ -120,25 +126,24 @@
                 '<span class="settings" ng-show="eti.showSettings">' +
                 '<h1>Settings</h1>' +
                 '<div><p><i>Refresh or navigate to another page for changes to take effect.</i></p>' +
-                // TODO: If a user goes invisible, they should probably also not see any users who are visible.
-				/*
                 '<label>Invisible Mode</label><input type="checkbox" ng-change="eti.toggleInvisibility()" ng-model="eti.isInvisible"/>' +
-                '<p>No information will be sent or received by the app if this is enabled. <i>Refresh or navigate to a different page for changes to occur.</i></p>' +
+                '<p>Prevents you from appearing as online to other users. <i>NOTE: You will not be able to see other users either!</i></p>' +
                 '<label>Enable Topic Sharing</label><input type="checkbox" ng-change="eti.toggleTopicSharing()" ng-model="eti.enableTopicSharing"/>' +
                 '<p>Allows your friends to follow you into topics by clicking on your name within the online friends list.</p>' +
-                '<label>Enable Chat with Friends</label><input type="checkbox" ng-change="eti.toggleFriendChat()" ng-model="eti.enableFriendChat"/>' +
-                '<p>Allows you to chat with any of your online friends as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
-                '<label>Enable Chat with Topic Users</label><input type="checkbox" ng-change="eti.toggleTopicChat()" ng-model="eti.enableTopicChat"/>' +
-                '<p>Allows you to chat with any users that are in the <b>same topic</b> as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
-				*/
+                /*
+                 '<label>Enable Chat with Friends</label><input type="checkbox" ng-change="eti.toggleFriendChat()" ng-model="eti.enableFriendChat"/>' +
+                 '<p>Allows you to chat with any of your online friends as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
+                 '<label>Enable Chat with Topic Users</label><input type="checkbox" ng-change="eti.toggleTopicChat()" ng-model="eti.enableTopicChat"/>' +
+                 '<p>Allows you to chat with any users that are in the <b>same topic</b> as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
+                 */
                 '<label>Move UI Right</label><input type="checkbox" ng-change="eti.toggleRightUI()" ng-model="eti.rightUI"/>' +
                 '<p>Moves this UI to the right side of the screen.</p>' +
-				/*
-                '<label>Friends Users</label><input type="text" readonly/>' +
-                '<p>This is your friend list. It is read only but great for copying so you can brag about how many friends you have.</p>' +
-                '<label>Blocked Users</label><input type="text"/>' +
-                '<p>Blocked users are not able to see you and you are not able to see them.</p>' +
-				*/
+                /*
+                 '<label>Friends Users</label><input type="text" readonly/>' +
+                 '<p>This is your friend list. It is read only but great for copying so you can brag about how many friends you have.</p>' +
+                 '<label>Blocked Users</label><input type="text"/>' +
+                 '<p>Blocked users are not able to see you and you are not able to see them.</p>' +
+                 */
                 '</div></span></span>',
                 controllerAs: 'eti',
                 controller: function ($scope, Topic) {
