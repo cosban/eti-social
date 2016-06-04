@@ -93,8 +93,8 @@
             return {
                 template: '<span class="eti-social">' +
                 '<span>' +
-                '<div ng-show="eti.topic.users.length">In topic <ul>' +
-                '<li class="flex" ng-repeat="user in eti.topic.users">' +
+                '<div ng-show="eti.topic.active.length">In topic <ul>' +
+                '<li class="flex" ng-repeat="user in eti.topic.active">' +
                 '<div>{{ user.name }}</div>' +
                 // chat bubble
                 '<a style="margin-left: 5px;" ng-if="eti.enableTopicChat" ng-click="chat.beginChat(user)">💬</a>' +
@@ -120,9 +120,9 @@
                 '<div ng-if="user.topics.length"> ' +
                 '<a href="//boards.endoftheinter.net/showmessages.php?topic={{ user.topics[0].id }}&page={{ user.topics[0].page }}">{{ user.name }}</a>' +
                 // chat bubble
-                '<a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="chat.beginChat(user)">💬</a></div>' +
+                '<a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="chat.beginChat(user, true)">💬</a></div>' +
                 // chat bubble
-                '<div ng-if="!user.topics.length">{{ user.name }} <a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="chat.beginChat(user)">💬</a></div>' +
+                '<div ng-if="!user.topics.length">{{ user.name }} <a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="chat.beginChat(user, true)">💬</a></div>' +
                 '</li>' +
                 '</ul></div>' +
 
@@ -139,14 +139,14 @@
                 '<h1>Settings</h1>' +
                 '<div><p><i>Refresh or navigate to another page for changes to take effect.</i></p>' +
                 '<label>Invisible Mode</label><input type="checkbox" ng-change="eti.toggleInvisibility()" ng-model="eti.isInvisible"/>' +
-                '<p>Prevents you from appearing as online to other users. <i>NOTE: You will not be able to see other users either!</i></p>' +
+                '<p>Prevents you from appearing as online to other active. <i>NOTE: You will not be able to see other active either!</i></p>' +
                 '<label>Enable Topic Sharing</label><input type="checkbox" ng-change="eti.toggleTopicSharing()" ng-model="eti.enableTopicSharing"/>' +
                 '<p>Allows your friends to follow you into topics by clicking on your name within the online friends list.</p>' +
 
                 '<label>Enable Chat with Friends</label><input type="checkbox" ng-change="eti.toggleFriendChat()" ng-model="eti.enableFriendChat"/>' +
                 '<p>Allows you to chat with any of your online friends as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
                 '<label>Enable Chat with Topic Users</label><input type="checkbox" ng-change="eti.toggleTopicChat()" ng-model="eti.enableTopicChat"/>' +
-                '<p>Allows you to chat with any users that are in the <b>same topic</b> as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
+                '<p>Allows you to chat with any active that are in the <b>same topic</b> as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
 
                 '<label>Move UI Right</label><input type="checkbox" ng-change="eti.toggleRightUI()" ng-model="eti.rightUI"/>' +
                 '<p>Moves this UI to the right side of the screen.</p>' +
@@ -154,7 +154,7 @@
                  '<label>Friends Users</label><input type="text" readonly/>' +
                  '<p>This is your friend list. It is read only but great for copying so you can brag about how many friends you have.</p>' +
                  '<label>Blocked Users</label><input type="text"/>' +
-                 '<p>Blocked users are not able to see you and you are not able to see them.</p>' +
+                 '<p>Blocked active are not able to see you and you are not able to see them.</p>' +
                  */
                 '</div></span></span>',
                 controllerAs: 'eti',
@@ -182,7 +182,7 @@
                         socket.emit('respondToRequest', user, accept);
                         findUser(vm.topic.requests, user, true);
 
-                        var inTopic = findUser(vm.topic.users, user);
+                        var inTopic = findUser(vm.topic.active, user);
                         if (inTopic) {
                             inTopic.pending = false;
                             inTopic.friend = !!accept;
@@ -240,9 +240,9 @@
                 }]
             };
         }])
-        .directive('etiChat', ["Chat", function (Chat) {
+        .directive('etiChat', ["Chat", "Topic", function (Chat, Topic) {
             return {
-                template: '<div class="eti-chat" draggable ng-repeat="user in chat.users">' +
+                template: '<div class="eti-chat" draggable ng-repeat="user in chat.active">' +
                 '<div style="border-bottom: 1px solid rgba(0, 0, 0, 0.2);"><span><span class="eti-chat-user" style="margin-bottom: 5px">{{ user.name }}</span>' +
                 '<span class="eti-chat-icons"><a ng-click="chat.toggleMinimized(user)">_</a><a ng-click="chat.closeChat(user)">✖️</a></span></span></div>' +
                 '<div ng-hide="chat.isMinimized(user)" class="rigid">' +
@@ -252,16 +252,18 @@
                 '<div tabindex="0" class="eti-chat-input" ng-keypress="chat.input($event, user)" contentEditable="true"></div>' +
                 '</div></div></div>',
                 controllerAs: 'chat',
-                controller: ["$document", "$scope", "Chat", function ($document, $scope, Chat) {
+                controller: ["$document", "$scope", "Chat", "Topic", function ($document, $scope, Chat, Topic) {
                     var vm = this;
+
                     vm.toggleMinimized = toggleMinimized;
                     vm.isMinimized = isMinimized;
                     vm.input = input;
                     vm.beginChat = beginChat;
                     vm.closeChat = closeChat;
 
-                    vm.users = [];
+                    vm.topic = null;
                     vm.minimized = [];
+                    vm.active = [];
 
                     function toggleMinimized(user) {
                         findUser(vm.minimized, user, true);
@@ -295,24 +297,48 @@
                         }
                     }
 
-                    function beginChat(user) {
-                        console.log(user);
-                        if (!findUser(vm.users, user, false)) {
-                            vm.users.push(user);
+                    function beginChat(user, prompted) {
+                        if(prompted){
+                            if (!findUser(vm.active, user, false)) {
+                                vm.active.push(user);
+                            }
+                            return;
+                        }
+                        var friends = JSON.parse(localStorage.getItem('eti-social-enableFriendChat')) || false;
+                        var topics = JSON.parse(localStorage.getItem('eti-social-enableTopicChat')) || false;
+                        console.log(friends);
+                        console.log(topics);
+                        if (
+                            (friends && findUser(vm.topic.friends, user, false)) ||
+                            (topics && findUser(vm.topic.active, user, false))
+                        ) {
+                            if (!findUser(vm.active, user, false)) {
+                                vm.active.push(user);
+                            }
                         }
                     }
 
                     function closeChat(user) {
-                        findUser(vm.users, user, true);
+                        findUser(vm.active, user, true);
                     }
 
                     Chat.onUpdate(function (user) {
-                        beginChat(user);
+                        beginChat(user, false);
+                        $scope.$apply();
+                    });
+
+                    Topic.getInfo().then(function (topic) {
+                        vm.topic = topic;
+                    });
+
+                    Topic.onUpdate(function (topic) {
+                        vm.topic = topic;
                         $scope.$apply();
                     });
                 }]
             };
-        }])
+        }
+        ])
         .directive('draggable', ["$document", function ($document) {
             return {
                 link: function (scope, element, attr) {
@@ -375,7 +401,7 @@
                 handlers.push(handler);
             }
 
-            function notify(data){
+            function notify(data) {
                 handlers.forEach(function (handler) {
                     handler(data);
                 });
@@ -408,19 +434,19 @@
         })
         .factory('Topic', ["$q", function ($q) {
             var topicData = {
-                    users: null,
+                    active: null,
                     friends: null,
                     requests: null,
                     requested: null
                 },
                 fetchInfo = $q.defer();
 
-            socket.on('users', function (userData) {
+            socket.on('active', function (userData) {
                 topicData.friends = userData.friends;
                 topicData.totalFriends = userData.totalFriends;
                 topicData.requests = userData.requests;
                 topicData.requested = userData.requested;
-                topicData.users = userData.inTopic;
+                topicData.active = userData.inTopic;
 
                 fetchInfo.resolve(topicData);
             });
@@ -433,7 +459,7 @@
             socket.on('friendJoined', function (joining) {
                 topicData.friends.push(joining);
 
-                var inTopic = findUser(topicData.users, joining);
+                var inTopic = findUser(topicData.active, joining);
                 if (inTopic && inTopic.pending) {
                     inTopic.friend = true;
                     inTopic.pending = false;
@@ -445,11 +471,11 @@
                 notify(topicData);
             });
             socket.on('joined', function (joining) {
-                topicData.users.push(joining);
+                topicData.active.push(joining);
                 notify(topicData);
             });
             socket.on('left', function (leaving) {
-                findUser(topicData.users, leaving, true);
+                findUser(topicData.active, leaving, true);
                 notify(topicData);
             });
 
