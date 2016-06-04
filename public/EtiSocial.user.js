@@ -50,7 +50,7 @@
             'span > span {display:inline-block;vertical-align:text-top;}' +
             '.eti-social, .eti-social a {color:black;}' +
             '.eti-social {position:fixed;top:0;font-size:12px;' +
-            (JSON.parse(localStorage.getItem('eti-social-rightUI')) ? "right:15px;" : "left:15px;") +
+            (JSON.parse(localStorage.getItem('eti-social-rightUI')) ? "right:9px;" : "left:9px;") +
             'padding:2px;background-color:rgba(255, 255, 255, 0.78);}' +
             '.settings { padding: 0px 30px 0 25px;margin: 0 0 0 5px;width:200px;border-left:1px rgba(0, 0, 0, 0.1) solid;background-color:rgba(255, 255, 255, 0.78);}' +
             '.small {font-size:10px}' +
@@ -517,5 +517,4 @@
     ui.innerHTML = style + '<eti-social></eti-social><eti-chat></eti-chat>';
     document.body.appendChild(ui);
     angular.bootstrap(ui, ['eti.social']);
-})
-();
+})();
