@@ -15,6 +15,7 @@ function connect(username, clientIp, hide) {
         if (!user) {
             user = {
                 name: username,
+                nwspname: username.replace(/\s/g, '_'),
                 topics: [],
                 joining: true
             };
@@ -59,6 +60,7 @@ io.on('connection', function (socket) {
         socket.on('friendRequest', friendRequest);
         socket.on('respondToRequest', respondToRequest);
         socket.on('disconnect', disconnect);
+        socket.on('chat', chat);
 
         Friendships.ofUser(user).then(initialize).then(function (friendships) {
             socket.emit('users', friendships);
@@ -113,6 +115,7 @@ io.on('connection', function (socket) {
 
                     return {
                         name: usr.name,
+                        nwspname: usr.name.replace(/\s/g,'_'),
                         friend: friend,
                         pending: pending
                     };
@@ -151,6 +154,15 @@ io.on('connection', function (socket) {
                         }
                     });
                 }
+            });
+        }
+
+        function chat(recipient, message) {
+            connections.findUser(user).forEach(function (sock) {
+                sock.emit('chatSent', recipient, message);
+            });
+            connections.findUser(recipient).forEach(function (sock) {
+                sock.emit('chatReceived', user, message);
             });
         }
 

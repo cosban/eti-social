@@ -49,9 +49,8 @@
         style = '<style>' +
             'span > span {display:inline-block;vertical-align:text-top;}' +
             '.eti-social, .eti-social a {color:black;}' +
-            '.eti-social {position:fixed;top:0;font-size:12px;' + (JSON.parse(
-                localStorage.getItem('eti-social-rightUI')) ?
-                "right:15px;" : "left:15px;") +
+            '.eti-social {position:fixed;top:0;font-size:12px;' +
+            (JSON.parse(localStorage.getItem('eti-social-rightUI')) ? "right:15px;" : "left:15px;") +
             'padding:2px;background-color:rgba(255, 255, 255, 0.78);}' +
             '.settings { padding: 0px 30px 0 25px;margin: 0 0 0 5px;width:200px;border-left:1px rgba(0, 0, 0, 0.1) solid;background-color:rgba(255, 255, 255, 0.78);}' +
             '.small {font-size:10px}' +
@@ -60,6 +59,14 @@
             'a {cursor:pointer;} ' +
             'ul { margin: 0; padding: 10px; list-style: none;} ' +
             '.flex { display: flex; justify-content: space-between; }' +
+            '.eti-chat { position:fixed;bottom:0;font-size:12px;width:200px;' +
+            'right:25px;' + // for those we lost along the way
+            'padding:2px;background-color:rgba(255, 255, 255, 1);}' +
+            '.eti-chat-user { margin: auto 5px auto auto; font-weight:bold;}' +
+            '.eti-chat-icons { position:absolute;right:1px; }' +
+            '.eti-chat-content { background-color:rgba(0, 0, 0, 0.1);margin-bottom:5px;overflow-y:auto;height:200px;}' +
+            '.eti-chat-message { margin: 2px 2px 7px 2px }' +
+            '.eti-chat-input { border:1px rgba(0,0,0,0.2) solid;padding:2px;cursor:text; min-height:15px;word-wrap:break-word;}' +
             '</style>';
 
     if (!topicList && (!tags.length || tags.filter(function (tag) {
@@ -84,12 +91,13 @@
 
         .directive('etiSocial', function (Topic) {
             return {
-                template: style +
-                '<span class="eti-social">' +
+                template: '<span class="eti-social">' +
                 '<span>' +
                 '<div ng-show="eti.topic.users.length">In topic <ul>' +
                 '<li class="flex" ng-repeat="user in eti.topic.users">' +
                 '<div>{{ user.name }}</div>' +
+                // chat bubble
+                '<a style="margin-left: 5px;" ng-if="eti.enableTopicChat" ng-click="chat.beginChat(user)">💬</a>' +
                 '<div class="gap-left">' +
                 '<div ng-if="user.friend"><3</div>' +
                 '<div ng-if="user.pending" style="font-size:10px;color:gray;">(pending)</div>' +
@@ -109,8 +117,12 @@
                 '</div>' +
                 '<ul ng-show="eti.showFriends">' +
                 '<li ng-repeat="user in eti.topic.friends">' +
-                '<a ng-if="user.topics.length" href="//boards.endoftheinter.net/showmessages.php?topic={{ user.topics[0].id }}&page={{ user.topics[0].page }}">{{ user.name }}</a>' +
-                '<div ng-if="!user.topics.length">{{ user.name }}</div>' +
+                '<div ng-if="user.topics.length"> ' +
+                '<a href="//boards.endoftheinter.net/showmessages.php?topic={{ user.topics[0].id }}&page={{ user.topics[0].page }}">{{ user.name }}</a>' +
+                // chat bubble
+                '<a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="chat.beginChat(user)">💬</a></div>' +
+                // chat bubble
+                '<div ng-if="!user.topics.length">{{ user.name }} <a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="chat.beginChat(user)">💬</a></div>' +
                 '</li>' +
                 '</ul></div>' +
 
@@ -130,12 +142,12 @@
                 '<p>Prevents you from appearing as online to other users. <i>NOTE: You will not be able to see other users either!</i></p>' +
                 '<label>Enable Topic Sharing</label><input type="checkbox" ng-change="eti.toggleTopicSharing()" ng-model="eti.enableTopicSharing"/>' +
                 '<p>Allows your friends to follow you into topics by clicking on your name within the online friends list.</p>' +
-                /*
-                 '<label>Enable Chat with Friends</label><input type="checkbox" ng-change="eti.toggleFriendChat()" ng-model="eti.enableFriendChat"/>' +
-                 '<p>Allows you to chat with any of your online friends as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
-                 '<label>Enable Chat with Topic Users</label><input type="checkbox" ng-change="eti.toggleTopicChat()" ng-model="eti.enableTopicChat"/>' +
-                 '<p>Allows you to chat with any users that are in the <b>same topic</b> as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
-                 */
+
+                '<label>Enable Chat with Friends</label><input type="checkbox" ng-change="eti.toggleFriendChat()" ng-model="eti.enableFriendChat"/>' +
+                '<p>Allows you to chat with any of your online friends as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
+                '<label>Enable Chat with Topic Users</label><input type="checkbox" ng-change="eti.toggleTopicChat()" ng-model="eti.enableTopicChat"/>' +
+                '<p>Allows you to chat with any users that are in the <b>same topic</b> as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
+
                 '<label>Move UI Right</label><input type="checkbox" ng-change="eti.toggleRightUI()" ng-model="eti.rightUI"/>' +
                 '<p>Moves this UI to the right side of the screen.</p>' +
                 /*
@@ -228,7 +240,180 @@
                 }
             };
         })
+        .directive('etiChat', function (Chat) {
+            return {
+                template: '<div class="eti-chat" draggable ng-repeat="user in chat.users">' +
+                '<div style="border-bottom: 1px solid rgba(0, 0, 0, 0.2);"><span><span class="eti-chat-user" style="margin-bottom: 5px">{{ user.name }}</span>' +
+                '<span class="eti-chat-icons"><a ng-click="chat.toggleMinimized(user)">_</a><a ng-click="chat.closeChat(user)">✖️</a></span></span></div>' +
+                '<div ng-hide="chat.isMinimized(user)" class="rigid">' +
+                '<div class="eti-chat-content" id="{{ user.nwspname }}">' +
+                // chat goes here
+                '</div>' +
+                '<div tabindex="0" class="eti-chat-input" ng-keypress="chat.input($event, user)" contentEditable="true"></div>' +
+                '</div></div></div>',
+                controllerAs: 'chat',
+                controller: function ($document, Chat) {
+                    var vm = this;
+                    vm.toggleMinimized = toggleMinimized;
+                    vm.isMinimized = isMinimized;
+                    vm.input = input;
+                    vm.beginChat = beginChat;
+                    vm.closeChat = closeChat;
 
+                    vm.users = [];
+                    vm.minimized = [];
+
+                    function toggleMinimized(user) {
+                        // fuck efficiency. who's going to talk to > 1000 people at a time.... especially on ETI?
+                        if (!isMinimized(user)) {
+                            vm.minimized.push(user);
+                        } else {
+                            for (var i = 0; i < vm.minimized.length; i++) {
+                                if (user.name === vm.minimized[i].name) {
+                                    vm.minimized.splice(i, 1);
+                                }
+                            }
+                        }
+                    }
+
+                    function isMinimized(user) {
+                        for (var i = 0; i < vm.minimized.length; i++) {
+                            if (user.name === vm.minimized[i].name) {
+                                return true;
+                            }
+                        }
+                        return false;
+                    }
+
+                    function input($event, user) {
+                        var key = $event.key || $event.code;
+                        var target = angular.element($event.target);
+                        var msg = target.text();
+                        switch (key.toLowerCase()) {
+                            case "enter" :
+                            {
+                                $event.preventDefault();
+                                socket.emit('chat', user, msg);
+                                msg = '';
+                                target.text(msg);
+                                break;
+                            }
+                            case 'keym':
+                            case 'm' :
+                            {
+                                // fuck you melon wolf
+                                console.log("fuck you melon wolf");
+                                $event.stopPropagation();
+                                break;
+                            }
+                        }
+                    }
+
+                    function beginChat(user) {
+                        for (var i = 0; i < vm.users.length; i++) {
+                            if (user.name === vm.users[i].name) {
+                                return;
+                            }
+                        }
+                        vm.users.push(user);
+                    }
+
+                    function closeChat(user) {
+                        for (var i = 0; i < vm.users.length; i++) {
+                            if (user.name === vm.users[i].name) {
+                                vm.users.splice(i, 1);
+                                return;
+                            }
+                        }
+                    }
+                }
+            };
+        })
+        .directive('draggable', function ($document) {
+            return {
+                link: function (scope, element, attr) {
+                    var startX = 0, startY = 0, x = 25, y = 0;
+                    element.on('mousedown', function (event) {
+                        // Prevent default dragging of selected content
+                        var target = angular.element(event.target);
+                        if (!isAnchor(target)) {
+                            return;
+                        }
+                        event.preventDefault();
+                        var width = "innerWidth" in window
+                            ? window.innerWidth
+                            : document.documentElement.offsetWidth;
+                        var height = "innerHeight" in window
+                            ? window.innerHeight
+                            : document.documentElement.offsetHeight;
+                        startX = width - event.pageX - x;
+                        startY = height - event.pageY - y;
+                        $document.on('mousemove', mousemove);
+                        $document.on('mouseup', mouseup);
+                    });
+
+                    function mousemove(event) {
+                        var width = "innerWidth" in window
+                            ? window.innerWidth
+                            : document.documentElement.offsetWidth;
+                        var height = "innerHeight" in window
+                            ? window.innerHeight
+                            : document.documentElement.offsetHeight;
+                        y = height - event.pageY - startY;
+                        x = width - event.pageX - startX;
+                        if (y < 0) {
+                            y = 0;
+                        }
+                        if (x < 0) {
+                            x = 0;
+                        }
+                        element.css({
+                            bottom: y + 'px',
+                            right: x + 'px'
+                        });
+                    }
+
+                    function mouseup() {
+                        $document.off('mousemove', mousemove);
+                        $document.off('mouseup', mouseup);
+                    }
+
+                    // an element is only draggable if it is not inside an element which is rigid
+                    // so long as that rigid element is not a parent of a draggable element.
+                    function isAnchor(target) {
+                        if (target[0] === element[0]) {
+                            return true;
+                        }
+                        if (target[0].classList.contains('rigid')) {
+                            return false;
+                        }
+                        return isAnchor(target.parent());
+                    }
+                }
+            };
+        })
+        .factory('Chat', function () {
+            socket.on('chatReceived', function (sender, message) {
+                var chatArea = angular.element(document.querySelector('#' + sender.nwspname));
+                var element = '<div class="eti-chat-message"><span><span class="eti-chat-user">'
+                    + sender.name
+                    + ': </span>'
+                    + message
+                    + '</span></div>';
+                chatArea.append(element);
+                chatArea[0].scrollTop = chatArea[0].scrollHeight;
+            });
+            socket.on('chatSent', function (recipient, message) {
+                var chatArea = angular.element(document.querySelector('#' + recipient.nwspname));
+                var element = '<div class="eti-chat-message"><span><span class="eti-chat-user">'
+                    + 'You: </span>'
+                    + message
+                    + '</span></div>';
+                chatArea.append(element);
+                chatArea[0].scrollTop = chatArea[0].scrollHeight;
+            });
+            return {};
+        })
         .factory('Topic', function ($q) {
             var topicData = {
                     users: null,
@@ -299,8 +484,9 @@
             };
         });
 
-    // build UI
-    ui.innerHTML = '<eti-social></eti-social>';
+// build UI
+    ui.innerHTML = style + '<eti-social></eti-social><eti-chat></eti-chat>';
     document.body.appendChild(ui);
     angular.bootstrap(ui, ['eti.social']);
-})();
+})
+();
