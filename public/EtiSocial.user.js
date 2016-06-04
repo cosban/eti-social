@@ -45,7 +45,7 @@
         urlPrefix = location.href.match(/^(https?)/i)[1],
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
         topicList = !location.href.match(/showmessages\.php/),
-        debug = false,
+        debug = true,
         style = '<style>' +
             'span > span {display:inline-block;vertical-align:text-top;}' +
             '.eti-social, .eti-social a {color:black;}' +
@@ -252,7 +252,7 @@
                 '<div tabindex="0" class="eti-chat-input" ng-keypress="chat.input($event, user)" contentEditable="true"></div>' +
                 '</div></div></div>',
                 controllerAs: 'chat',
-                controller: ["$document", "Chat", function ($document, Chat) {
+                controller: ["$document", "$scope", "Chat", function ($document, $scope, Chat) {
                     var vm = this;
                     vm.toggleMinimized = toggleMinimized;
                     vm.isMinimized = isMinimized;
@@ -264,25 +264,11 @@
                     vm.minimized = [];
 
                     function toggleMinimized(user) {
-                        // fuck efficiency. who's going to talk to > 1000 people at a time.... especially on ETI?
-                        if (!isMinimized(user)) {
-                            vm.minimized.push(user);
-                        } else {
-                            for (var i = 0; i < vm.minimized.length; i++) {
-                                if (user.name === vm.minimized[i].name) {
-                                    vm.minimized.splice(i, 1);
-                                }
-                            }
-                        }
+                        findUser(vm.minimized, user, true);
                     }
 
                     function isMinimized(user) {
-                        for (var i = 0; i < vm.minimized.length; i++) {
-                            if (user.name === vm.minimized[i].name) {
-                                return true;
-                            }
-                        }
-                        return false;
+                        return findUser(vm.minimized, user, false);
                     }
 
                     function input($event, user) {
@@ -310,22 +296,20 @@
                     }
 
                     function beginChat(user) {
-                        for (var i = 0; i < vm.users.length; i++) {
-                            if (user.name === vm.users[i].name) {
-                                return;
-                            }
+                        console.log(user);
+                        if (!findUser(vm.users, user, false)) {
+                            vm.users.push(user);
                         }
-                        vm.users.push(user);
                     }
 
                     function closeChat(user) {
-                        for (var i = 0; i < vm.users.length; i++) {
-                            if (user.name === vm.users[i].name) {
-                                vm.users.splice(i, 1);
-                                return;
-                            }
-                        }
+                        findUser(vm.users, user, true);
                     }
+
+                    Chat.onUpdate(function (user) {
+                        beginChat(user);
+                        $scope.$apply();
+                    });
                 }]
             };
         }])
@@ -340,12 +324,8 @@
                             return;
                         }
                         event.preventDefault();
-                        var width = "innerWidth" in window
-                            ? window.innerWidth
-                            : document.documentElement.offsetWidth;
-                        var height = "innerHeight" in window
-                            ? window.innerHeight
-                            : document.documentElement.offsetHeight;
+                        var width = "innerWidth" in window ? window.innerWidth : document.documentElement.offsetWidth;
+                        var height = "innerHeight" in window ? window.innerHeight : document.documentElement.offsetHeight;
                         startX = width - event.pageX - x;
                         startY = height - event.pageY - y;
                         $document.on('mousemove', mousemove);
@@ -353,12 +333,8 @@
                     });
 
                     function mousemove(event) {
-                        var width = "innerWidth" in window
-                            ? window.innerWidth
-                            : document.documentElement.offsetWidth;
-                        var height = "innerHeight" in window
-                            ? window.innerHeight
-                            : document.documentElement.offsetHeight;
+                        var width = "innerWidth" in window ? window.innerWidth : document.documentElement.offsetWidth;
+                        var height = "innerHeight" in window ? window.innerHeight : document.documentElement.offsetHeight;
                         y = height - event.pageY - startY;
                         x = width - event.pageX - startX;
                         if (y < 0) {
@@ -393,26 +369,42 @@
             };
         }])
         .factory('Chat', function () {
+            var handlers = [];
+
+            function onUpdate(handler) {
+                handlers.push(handler);
+            }
+
+            function notify(data){
+                handlers.forEach(function (handler) {
+                    handler(data);
+                });
+            }
+
             socket.on('chatReceived', function (sender, message) {
+                notify(sender);
                 var chatArea = angular.element(document.querySelector('#' + sender.nwspname));
-                var element = '<div class="eti-chat-message"><span><span class="eti-chat-user">'
-                    + sender.name
-                    + ': </span>'
-                    + message
-                    + '</span></div>';
+                var element = '<div class="eti-chat-message"><span><span class="eti-chat-user">' +
+                    sender.name +
+                    ': </span>' +
+                    message +
+                    '</span></div>';
                 chatArea.append(element);
                 chatArea[0].scrollTop = chatArea[0].scrollHeight;
             });
             socket.on('chatSent', function (recipient, message) {
                 var chatArea = angular.element(document.querySelector('#' + recipient.nwspname));
-                var element = '<div class="eti-chat-message"><span><span class="eti-chat-user">'
-                    + 'You: </span>'
-                    + message
-                    + '</span></div>';
+                var element = '<div class="eti-chat-message"><span><span class="eti-chat-user">' +
+                    'You: </span>' +
+                    message +
+                    '</span></div>';
                 chatArea.append(element);
                 chatArea[0].scrollTop = chatArea[0].scrollHeight;
             });
-            return {};
+            return {
+                onUpdate: onUpdate,
+                notify: notify
+            };
         })
         .factory('Topic', ["$q", function ($q) {
             var topicData = {
