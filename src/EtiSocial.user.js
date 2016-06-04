@@ -45,7 +45,7 @@
         urlPrefix = location.href.match(/^(https?)/i)[1],
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
         topicList = !location.href.match(/showmessages\.php/),
-        debug = true,
+        debug = false,
         style = '<style>' +
             'span > span {display:inline-block;vertical-align:text-top;}' +
             '.eti-social, .eti-social a {color:black;}' +
@@ -93,8 +93,8 @@
             return {
                 template: '<span class="eti-social">' +
                 '<span>' +
-                '<div ng-show="eti.topic.active.length">In topic <ul>' +
-                '<li class="flex" ng-repeat="user in eti.topic.active">' +
+                '<div ng-show="eti.topic.users.length">In topic <ul>' +
+                '<li class="flex" ng-repeat="user in eti.topic.users">' +
                 '<div>{{ user.name }}</div>' +
                 // chat bubble
                 '<a style="margin-left: 5px;" ng-if="eti.enableTopicChat" ng-click="chat.beginChat(user)">💬</a>' +
@@ -139,14 +139,14 @@
                 '<h1>Settings</h1>' +
                 '<div><p><i>Refresh or navigate to another page for changes to take effect.</i></p>' +
                 '<label>Invisible Mode</label><input type="checkbox" ng-change="eti.toggleInvisibility()" ng-model="eti.isInvisible"/>' +
-                '<p>Prevents you from appearing as online to other active. <i>NOTE: You will not be able to see other active either!</i></p>' +
+                '<p>Prevents you from appearing as online to other users. <i>NOTE: You will not be able to see other users either!</i></p>' +
                 '<label>Enable Topic Sharing</label><input type="checkbox" ng-change="eti.toggleTopicSharing()" ng-model="eti.enableTopicSharing"/>' +
                 '<p>Allows your friends to follow you into topics by clicking on your name within the online friends list.</p>' +
 
                 '<label>Enable Chat with Friends</label><input type="checkbox" ng-change="eti.toggleFriendChat()" ng-model="eti.enableFriendChat"/>' +
                 '<p>Allows you to chat with any of your online friends as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
                 '<label>Enable Chat with Topic Users</label><input type="checkbox" ng-change="eti.toggleTopicChat()" ng-model="eti.enableTopicChat"/>' +
-                '<p>Allows you to chat with any active that are in the <b>same topic</b> as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
+                '<p>Allows you to chat with any users that are in the <b>same topic</b> as you as long as they have chat enabled as well. <i>Chat is not saved.</i></p>' +
 
                 '<label>Move UI Right</label><input type="checkbox" ng-change="eti.toggleRightUI()" ng-model="eti.rightUI"/>' +
                 '<p>Moves this UI to the right side of the screen.</p>' +
@@ -154,7 +154,7 @@
                  '<label>Friends Users</label><input type="text" readonly/>' +
                  '<p>This is your friend list. It is read only but great for copying so you can brag about how many friends you have.</p>' +
                  '<label>Blocked Users</label><input type="text"/>' +
-                 '<p>Blocked active are not able to see you and you are not able to see them.</p>' +
+                 '<p>Blocked users are not able to see you and you are not able to see them.</p>' +
                  */
                 '</div></span></span>',
                 controllerAs: 'eti',
@@ -182,7 +182,7 @@
                         socket.emit('respondToRequest', user, accept);
                         findUser(vm.topic.requests, user, true);
 
-                        var inTopic = findUser(vm.topic.active, user);
+                        var inTopic = findUser(vm.topic.users, user);
                         if (inTopic) {
                             inTopic.pending = false;
                             inTopic.friend = !!accept;
@@ -308,7 +308,7 @@
                             var topics = JSON.parse(localStorage.getItem('eti-social-enableTopicChat')) || false;
                             if (
                                 (friends && findUser(vm.topic.friends, user, false)) ||
-                                (topics && findUser(vm.topic.active, user, false))
+                                (topics && findUser(vm.topic.users, user, false))
                             ) {
                                 if (!findUser(vm.active, user, false)) {
                                     vm.active.push(user);
@@ -445,19 +445,19 @@
         })
         .factory('Topic', ["$q", function ($q) {
             var topicData = {
-                    active: null,
+                    users: null,
                     friends: null,
                     requests: null,
                     requested: null
                 },
                 fetchInfo = $q.defer();
 
-            socket.on('active', function (userData) {
+            socket.on('users', function (userData) {
                 topicData.friends = userData.friends;
                 topicData.totalFriends = userData.totalFriends;
                 topicData.requests = userData.requests;
                 topicData.requested = userData.requested;
-                topicData.active = userData.inTopic;
+                topicData.users = userData.inTopic;
 
                 fetchInfo.resolve(topicData);
             });
@@ -470,7 +470,7 @@
             socket.on('friendJoined', function (joining) {
                 topicData.friends.push(joining);
 
-                var inTopic = findUser(topicData.active, joining);
+                var inTopic = findUser(topicData.users, joining);
                 if (inTopic && inTopic.pending) {
                     inTopic.friend = true;
                     inTopic.pending = false;
@@ -482,11 +482,11 @@
                 notify(topicData);
             });
             socket.on('joined', function (joining) {
-                topicData.active.push(joining);
+                topicData.users.push(joining);
                 notify(topicData);
             });
             socket.on('left', function (leaving) {
-                findUser(topicData.active, leaving, true);
+                findUser(topicData.users, leaving, true);
                 notify(topicData);
             });
 

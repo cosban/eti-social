@@ -63,7 +63,7 @@ io.on('connection', function (socket) {
         socket.on('chat', chat);
 
         Friendships.ofUser(user).then(initialize).then(function (friendships) {
-            socket.emit('active', friendships);
+            socket.emit('users', friendships);
         });
 
         function initialize(friendships) {
