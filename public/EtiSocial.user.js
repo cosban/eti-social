@@ -242,7 +242,7 @@
         }])
         .directive('etiChat', ["Chat", "Topic", function (Chat, Topic) {
             return {
-                template: '<div class="eti-chat" draggable ng-repeat="user in chat.active">' +
+                template: '<div class="eti-chat" draggable ng-repeat="user in chat.active" style="right: {{ chat.getRightMargin(user) }}">' +
                 '<div style="border-bottom: 1px solid rgba(0, 0, 0, 0.2);"><span><span class="eti-chat-user" style="margin-bottom: 5px">{{ user.name }}</span>' +
                 '<span class="eti-chat-icons"><a ng-click="chat.toggleMinimized(user)">_</a><a ng-click="chat.closeChat(user)">✖️</a></span></span></div>' +
                 '<div ng-hide="chat.isMinimized(user)" class="rigid">' +
@@ -260,6 +260,7 @@
                     vm.input = input;
                     vm.beginChat = beginChat;
                     vm.closeChat = closeChat;
+                    vm.getRightMargin = getRightMargin;
 
                     vm.topic = null;
                     vm.minimized = [];
@@ -298,28 +299,35 @@
                     }
 
                     function beginChat(user, prompted) {
-                        if(prompted){
+                        if (prompted) {
                             if (!findUser(vm.active, user, false)) {
                                 vm.active.push(user);
                             }
-                            return;
-                        }
-                        var friends = JSON.parse(localStorage.getItem('eti-social-enableFriendChat')) || false;
-                        var topics = JSON.parse(localStorage.getItem('eti-social-enableTopicChat')) || false;
-                        console.log(friends);
-                        console.log(topics);
-                        if (
-                            (friends && findUser(vm.topic.friends, user, false)) ||
-                            (topics && findUser(vm.topic.active, user, false))
-                        ) {
-                            if (!findUser(vm.active, user, false)) {
-                                vm.active.push(user);
+                        } else {
+                            var friends = JSON.parse(localStorage.getItem('eti-social-enableFriendChat')) || false;
+                            var topics = JSON.parse(localStorage.getItem('eti-social-enableTopicChat')) || false;
+                            if (
+                                (friends && findUser(vm.topic.friends, user, false)) ||
+                                (topics && findUser(vm.topic.active, user, false))
+                            ) {
+                                if (!findUser(vm.active, user, false)) {
+                                    vm.active.push(user);
+                                }
                             }
                         }
                     }
 
                     function closeChat(user) {
                         findUser(vm.active, user, true);
+                    }
+
+                    function getRightMargin(user) {
+                        if(findUser(vm.active, user, false)){
+                            var index = vm.active.indexOf(user);
+                            var margin = (210 * index) + 25;
+                            return margin + "px";
+                        }
+                        return "25px";
                     }
 
                     Chat.onUpdate(function (user) {
@@ -342,7 +350,7 @@
         .directive('draggable', ["$document", function ($document) {
             return {
                 link: function (scope, element, attr) {
-                    var startX = 0, startY = 0, x = 25, y = 0;
+                    var startX = 0, startY = 0, x = 0, y = 0;
                     element.on('mousedown', function (event) {
                         // Prevent default dragging of selected content
                         var target = angular.element(event.target);
@@ -352,6 +360,9 @@
                         event.preventDefault();
                         var width = "innerWidth" in window ? window.innerWidth : document.documentElement.offsetWidth;
                         var height = "innerHeight" in window ? window.innerHeight : document.documentElement.offsetHeight;
+                        var rect = element[0].getBoundingClientRect();
+                        x = width - rect.right;
+                        y = height - rect.bottom;
                         startX = width - event.pageX - x;
                         startY = height - event.pageY - y;
                         $document.on('mousemove', mousemove);
