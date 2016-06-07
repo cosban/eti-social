@@ -45,7 +45,7 @@
         urlPrefix = location.href.match(/^(https?)/i)[1],
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
         topicList = !location.href.match(/showmessages\.php/),
-        debug = true,
+        debug = false,
     // TODO: this was separated out so that themeing could be a thing.
         style = '<style>' +
             'span > span {display:inline-block;vertical-align:text-top;}' +
