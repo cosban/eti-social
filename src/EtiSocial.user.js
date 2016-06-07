@@ -45,7 +45,7 @@
         urlPrefix = location.href.match(/^(https?)/i)[1],
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
         topicList = !location.href.match(/showmessages\.php/),
-        debug = false,
+        debug = true,
         style = '<style>' +
             'span > span {display:inline-block;vertical-align:text-top;}' +
             '.eti-social, .eti-social a {color:black;}' +
@@ -97,7 +97,7 @@
                 '<li class="flex" ng-repeat="user in eti.topic.users">' +
                 '<div>{{ user.name }}</div>' +
                 // chat bubble
-                '<a style="margin-left: 5px;" ng-if="eti.enableTopicChat" ng-click="chat.beginChat(user)">💬</a>' +
+                '<a style="margin-left: 5px;" ng-if="eti.enableTopicChat" ng-click="eti.beginChat(user, true)">💬</a>' +
                 '<div class="gap-left">' +
                 '<div ng-if="user.friend"><3</div>' +
                 '<div ng-if="user.pending" style="font-size:10px;color:gray;">(pending)</div>' +
@@ -120,9 +120,9 @@
                 '<div ng-if="user.topics.length"> ' +
                 '<a href="//boards.endoftheinter.net/showmessages.php?topic={{ user.topics[0].id }}&page={{ user.topics[0].page }}">{{ user.name }}</a>' +
                 // chat bubble
-                '<a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="chat.beginChat(user, true)">💬</a></div>' +
+                '<a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="eti.beginChat(user, true)">💬</a></div>' +
                 // chat bubble
-                '<div ng-if="!user.topics.length">{{ user.name }} <a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="chat.beginChat(user, true)">💬</a></div>' +
+                '<div ng-if="!user.topics.length">{{ user.name }} <a style="margin-left:5px;" ng-if="eti.enableFriendChat" ng-click="eti.beginChat(user, true)">💬</a></div>' +
                 '</li>' +
                 '</ul></div>' +
 
@@ -158,7 +158,7 @@
                  */
                 '</div></span></span>',
                 controllerAs: 'eti',
-                controller: ["$scope", "Topic", function ($scope, Topic) {
+                controller: ["$scope", "$scope", "Topic", function ($scope, $rootScope, Topic) {
                     var vm = this;
 
                     vm.topic = null;
@@ -206,6 +206,7 @@
                     vm.toggleFriendChat = toggleFriendChat;
                     vm.toggleTopicChat = toggleTopicChat;
                     vm.toggleRightUI = toggleRightUI;
+                    vm.beginChat = beginChat;
                     vm.isInvisible = JSON.parse(localStorage.getItem('eti-social-isInvisible')) || false;
                     vm.enableTopicSharing = JSON.parse(localStorage.getItem('eti-social-enableTopicSharing')) || false;
                     vm.enableFriendChat = JSON.parse(localStorage.getItem('eti-social-enableFriendChat')) || false;
@@ -213,6 +214,7 @@
                     vm.rightUI = JSON.parse(localStorage.getItem('eti-social-rightUI')) || false;
                     vm.friends = null;
                     vm.blocked = null;
+                    vm.chatters = [];
 
                     function toggleShowSettings() {
                         vm.showSettings = !vm.showSettings;
@@ -237,41 +239,60 @@
                     function toggleRightUI() {
                         localStorage.setItem('eti-social-rightUI', vm.rightUI);
                     }
+
+                    function beginChat(user, prompted) {
+                        if (prompted ||
+                            (vm.enableFriendChat && findUser(vm.topic.friends, user, false)) ||
+                            (vm.enableTopicChat && findUser(vm.topic.users, user, false))
+                        ) {
+                            if (!findUser(vm.chatters, user, false)) {
+                                vm.chatters.push(user);
+                            }
+                        }
+                    }
+
+                    $rootScope.$on('receivedChat', function (event, data) {
+                        beginChat(data, false);
+                        $scope.$apply();
+                    });
+
+                    $rootScope.$on('closeChat', function (event, data) {
+                        findUser(vm.chatters, data, true);
+                        $scope.$apply();
+                    });
                 }]
             };
         }])
-        .directive('etiChat', ["Chat", "Topic", function (Chat, Topic) {
+        .directive('etiChat', ["Chat", function (Chat) {
             return {
-                template: '<div class="eti-chat" draggable ng-repeat="user in chat.active" style="right: {{ chat.getRightMargin(user) }}">' +
+                scope: {
+                    user: "=user"
+                },
+                template: '<div class="eti-chat" draggable>' +
                 '<div style="border-bottom: 1px solid rgba(0, 0, 0, 0.2);"><span><span class="eti-chat-user" style="margin-bottom: 5px">{{ user.name }}</span>' +
-                '<span class="eti-chat-icons"><a ng-click="chat.toggleMinimized(user)">_</a><a ng-click="chat.closeChat(user)">✖️</a></span></span></div>' +
-                '<div ng-hide="chat.isMinimized(user)" class="rigid">' +
-                '<div class="eti-chat-content" id="{{ user.nwspname }}">' +
-                // chat goes here
-                '</div>' +
+                '<span class="eti-chat-icons"><a ng-click="chat.toggleMinimized()">_</a><a ng-click="chat.closeChat()">✖️</a></span></span></div>' +
+                '<div ng-hide="chat.minimized" class="rigid">' +
+                '<div class="eti-chat-content">' +
+                '<div ng-repeat="message in chat.messages"><span>' +
+                '<span class="eti-chat-user">{{ message.sender.name }}: </span>' +
+                '{{message.message}}' +
+                '</span></div></div>' +
                 '<div tabindex="0" class="eti-chat-input" ng-keypress="chat.input($event, user)" contentEditable="true"></div>' +
                 '</div></div></div>',
                 controllerAs: 'chat',
-                controller: ["$document", "$scope", "Chat", "Topic", function ($document, $scope, Chat, Topic) {
+                controller: ["$document", "$scope", "$rootScope", "Chat", function ($document, $scope, $rootScope, Chat) {
                     var vm = this;
 
                     vm.toggleMinimized = toggleMinimized;
-                    vm.isMinimized = isMinimized;
-                    vm.input = input;
-                    vm.beginChat = beginChat;
                     vm.closeChat = closeChat;
-                    vm.getRightMargin = getRightMargin;
+                    vm.input = input;
 
-                    vm.topic = null;
-                    vm.minimized = [];
-                    vm.active = [];
+                    vm.minimized = false;
+                    vm.messages = [];
+                    vm.user = $scope.user;
 
-                    function toggleMinimized(user) {
-                        findUser(vm.minimized, user, true);
-                    }
-
-                    function isMinimized(user) {
-                        return findUser(vm.minimized, user, false);
+                    function toggleMinimized() {
+                        vm.minimized = !vm.minimized;
                     }
 
                     function input($event, user) {
@@ -298,49 +319,15 @@
                         }
                     }
 
-                    function beginChat(user, prompted) {
-                        if (prompted) {
-                            if (!findUser(vm.active, user, false)) {
-                                vm.active.push(user);
-                            }
-                        } else {
-                            var friends = JSON.parse(localStorage.getItem('eti-social-enableFriendChat')) || false;
-                            var topics = JSON.parse(localStorage.getItem('eti-social-enableTopicChat')) || false;
-                            if (
-                                (friends && findUser(vm.topic.friends, user, false)) ||
-                                (topics && findUser(vm.topic.users, user, false))
-                            ) {
-                                if (!findUser(vm.active, user, false)) {
-                                    vm.active.push(user);
-                                }
-                            }
+                    function closeChat() {
+                        $rootScope.$broadcast('closeChat', vm.user);
+                    }
+
+                    Chat.routeTo(vm.user, function (data) {
+                        if (!data.sender) {
+                            data.sender = {name: 'You'};
                         }
-                    }
-
-                    function closeChat(user) {
-                        findUser(vm.active, user, true);
-                    }
-
-                    function getRightMargin(user) {
-                        if(findUser(vm.active, user, false)){
-                            var index = vm.active.indexOf(user);
-                            var margin = (210 * index) + 25;
-                            return margin + "px";
-                        }
-                        return "25px";
-                    }
-
-                    Chat.onUpdate(function (user) {
-                        beginChat(user, false);
-                        $scope.$apply();
-                    });
-
-                    Topic.getInfo().then(function (topic) {
-                        vm.topic = topic;
-                    });
-
-                    Topic.onUpdate(function (topic) {
-                        vm.topic = topic;
+                        vm.messages.push(data);
                         $scope.$apply();
                     });
                 }]
@@ -405,41 +392,26 @@
                 }
             };
         }])
-        .factory('Chat', function () {
-            var handlers = [];
+        .factory('Chat', function ($rootScope) {
+            var routes = {};
 
-            function onUpdate(handler) {
-                handlers.push(handler);
+            function routeTo(user, handler) {
+                routes[user.nwspname] = handler;
             }
 
             function notify(data) {
-                handlers.forEach(function (handler) {
-                    handler(data);
-                });
+                routes[data.user.nwspname](data);
             }
 
             socket.on('chatReceived', function (sender, message) {
-                notify(sender);
-                var chatArea = angular.element(document.querySelector('#' + sender.nwspname));
-                var element = '<div class="eti-chat-message"><span><span class="eti-chat-user">' +
-                    sender.name +
-                    ': </span>' +
-                    message +
-                    '</span></div>';
-                chatArea.append(element);
-                chatArea[0].scrollTop = chatArea[0].scrollHeight;
+                $rootScope.$broadcast('receivedChat', sender);
+                notify({user: sender, sender: sender, message: message});
             });
             socket.on('chatSent', function (recipient, message) {
-                var chatArea = angular.element(document.querySelector('#' + recipient.nwspname));
-                var element = '<div class="eti-chat-message"><span><span class="eti-chat-user">' +
-                    'You: </span>' +
-                    message +
-                    '</span></div>';
-                chatArea.append(element);
-                chatArea[0].scrollTop = chatArea[0].scrollHeight;
+                notify({user: recipient, message: message});
             });
             return {
-                onUpdate: onUpdate,
+                routeTo: routeTo,
                 notify: notify
             };
         })
@@ -514,7 +486,7 @@
         }]);
 
 // build UI
-    ui.innerHTML = style + '<eti-social></eti-social><eti-chat></eti-chat>';
+    ui.innerHTML = style + '<eti-social></eti-social><eti-chat ng-repeat="user in eti.chatters" user ="user"></eti-chat>';
     document.body.appendChild(ui);
     angular.bootstrap(ui, ['eti.social']);
 })();
