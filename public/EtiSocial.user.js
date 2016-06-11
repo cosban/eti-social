@@ -45,7 +45,7 @@
         urlPrefix = location.href.match(/^(https?)/i)[1],
         tags = Array.apply(this, document.querySelectorAll('h2 a')),
         topicList = !location.href.match(/showmessages\.php/),
-        debug = false,
+        debug = true,
     // TODO: this was separated out so that themeing could be a thing.
         style = '<style>' +
             'span > span {display:inline-block;vertical-align:text-top;}' +
@@ -267,10 +267,11 @@
         .directive('etiChat', ["Chat", function (Chat) {
             return {
                 scope: {
-                    user: "=user"
+                    user: "=user",
+                    index: "=index"
                 },
-                template: '<div class="eti-chat" draggable>' +
-                '<div style="border-bottom: 1px solid rgba(0, 0, 0, 0.2);"><span><span class="eti-chat-user" style="margin-bottom: 5px">{{ user.name }}</span>' +
+                template: '<div class="eti-chat" style="right:{{chat.getRight()}}" draggable>' +
+                '<div style="border-bottom: 1px solid rgba(0, 0, 0, 0.2);"><span><span class="eti-chat-user" style="margin-bottom: 5px;">{{ chat.user.name }}</span>' +
                 '<span class="eti-chat-icons"><a ng-click="chat.toggleMinimized()">_</a><a ng-click="chat.closeChat()">✖️</a></span></span></div>' +
                 '<div ng-hide="chat.minimized" class="rigid">' +
                 '<div class="eti-chat-content">' +
@@ -287,10 +288,12 @@
                     vm.toggleMinimized = toggleMinimized;
                     vm.closeChat = closeChat;
                     vm.input = input;
+                    vm.getRight = getRight;
 
                     vm.minimized = false;
                     vm.messages = [];
                     vm.user = $scope.user;
+                    vm.index = $scope.index;
 
                     function toggleMinimized() {
                         vm.minimized = !vm.minimized;
@@ -322,6 +325,11 @@
 
                     function closeChat() {
                         $rootScope.$broadcast('closeChat', vm.user);
+                    }
+
+
+                    function getRight() {
+                        return (25 + (205 * vm.index)) + 'px';
                     }
 
                     Chat.routeTo(vm.user, function (data) {
@@ -487,7 +495,7 @@
         }]);
 
 // build UI
-    ui.innerHTML = style + '<eti-social></eti-social><eti-chat ng-repeat="user in eti.chatters" user ="user"></eti-chat>';
+    ui.innerHTML = style + '<eti-social></eti-social><eti-chat ng-repeat="user in eti.chatters" user="user" index="$index"></eti-chat>';
     document.body.appendChild(ui);
     angular.bootstrap(ui, ['eti.social']);
 })();
